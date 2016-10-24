@@ -165,12 +165,12 @@ emit-rich: function [
 	out: make block! 2 * length? data
 	parse data [
 		some [
-			set value string! (repend out ['font 'text-font value])
-		|	'bold set value string! (repend out ['font 'bold-font value])
-		|	'italic set value string! (repend out ['font 'italic-font value])
-		|	'code set value string! (repend out ['font 'fixed-font value])
-		|	'nick set value string! (repend out ['font 'underline-font value])
-		|	'link set value string! (repend out ['font 'link-font value])
+			set value string! (repend out ['font 'fonts/text value])
+		|	'bold set value string! (repend out ['font 'fonts/bold value])
+		|	'italic set value string! (repend out ['font 'fonts/italic value])
+		|	'code set value string! (repend out ['font 'fonts/fixed value])
+		|	'nick set value string! (repend out ['font 'fonts/underline value])
+		|	'link set value string! (repend out ['font 'fonts/link value])
 		]
 	]
 	out

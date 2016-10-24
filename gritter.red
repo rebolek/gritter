@@ -268,8 +268,8 @@ check-over: function [
 	area: [size: 0x0 offset: 0x0]
 	either face/extra/highlight [
 		unless inside-face? face/extra/highlight event-offset [
-			if pos: find face/draw 'active-link-font [
-				pos/1: 'link-font
+			if pos: find face/draw 'fonts/active-link [
+				pos/1: 'fonts/link
 				face/extra/highlight: none
 				show face
 			]
@@ -282,9 +282,9 @@ check-over: function [
 				pos: find face/draw area/offset
 				if pos [
 					pos: back back pos
-					if equal? 'link-font first pos [
+					if equal? 'fonts/link first pos [
 						face/extra/highlight: copy area
-						pos/1: 'active-link-font
+						pos/1: 'fonts/active-link
 						show face
 					]
 				]

@@ -15,19 +15,28 @@ Red [
 
 ; --- fonts
 
+fonts: #()
+fonts/base: make font! [
+	name: "Segoe UI"
+	size: 10
+	color: 30.30.30
+	style: []
+	anti-alias?: yes
+]
+
 make-fonts: function [
 	spec
 ] [
 	styles: clear []
-	parse probe spec [
+	parse spec [
 		some [
 			set font set-word! (
-				probe font
 				clear styles
-				parent: base-font
+				parent: fonts/base
+				name: parent/name
 				size: parent/size
 				color: parent/color
-				parent: 'base-font
+				parent: 'base
 			)
 			opt [set parent word!]
 			any [
@@ -37,7 +46,7 @@ make-fonts: function [
 			|	set style issue! (append styles load form style)	
 			]
 			(
-				probe set font make get parent compose/deep [
+				fonts/:font: make fonts/:parent compose/deep [
 					name: (name)
 					size: (size)
 					color: (color)
@@ -48,28 +57,20 @@ make-fonts: function [
 	]
 ]
 
-base-font: make font! [
-	name: "Segoe UI"
-	size: 10
-	color: 30.30.30
-	style: []
-	anti-alias?: yes
-]
-
 make-fonts [
-	text-font: base-font 10
-	bold-font: #bold
-	italic-font: #italic
-	underline-font: #underline
-	link-font: #bold 120.60.60
-	active-link-font: #bold 220.160.160
-	fixed-font: "Lucida Console"
+	text: base 10
+	bold: #bold
+	italic: #italic
+	underline: #underline
+	link: #bold 120.60.60
+	active-link: #bold 220.160.160
+	fixed: "Lucida Console"
 ]
 
 ; -----------
 
 face: make face! [
-	font: text-font
+	font: fonts/text
 ]
 
 whitespace?: function [
@@ -169,12 +170,12 @@ rich-text: function [
 	areas: make block! 50
 
 	face: make face! [
-		font: text-font
+		font: fonts/text
 	]
 
 	font-rule: [
-		'font set value word! (
-			repend out ['font value] 
+		'font set value [word! | path!] (
+			repend out ['font get value] 
 			face/font: get value
 			font-offset: line-height - line-spacing - second size-text/with face "M"
 		)
