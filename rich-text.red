@@ -90,7 +90,7 @@ rich-text: function [
 
 	emit-text: does [
 		append out reduce ['text as-pair start-pos char-size/y copy line]
-		append areas probe reduce ['area as-pair start-pos y-pos size-text/with face copy line]
+		append areas reduce ['area as-pair start-pos y-pos size-text/with face copy line]
 		blocks: blocks + 1
 	]
 

@@ -90,7 +90,7 @@ marky-mark: func [
 		to mark
 		thru mark
 		(
-			append out probe reduce [copy text 'code value]
+			repend out [copy text 'code value]
 			clear text
 		)
 	]
@@ -152,7 +152,7 @@ marky-mark: func [
 
 	out: make block! 1000
 	clear text
-	parse probe data rules
+	parse data rules
 	unless empty? text [append out copy text]
 	copy out
 ]
@@ -170,7 +170,7 @@ emit-rich: function [
 		|	'italic set value string! (repend out ['font 'italic-font value])
 		|	'code set value string! (repend out ['font 'fixed-font value])
 		|	'nick set value string! (repend out ['font 'underline-font value])
-		|	'link set value string! (print "link" append out probe reduce ['font 'link-font value])
+		|	'link set value string! (repend out ['font 'link-font value])
 		]
 	]
 	out
