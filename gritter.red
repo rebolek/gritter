@@ -128,17 +128,18 @@ gritter: context [
 		face
 		/force
 	] [
-		prin ["get unread..."]
+;		prin ["get unread..."]
 		unread: list-unread user-id room-id
-		print "done."
+;		print ["done." force unread/chat not-shown face/pane unread]
 		if any [
 			force
 			all [
 				not empty? unread/chat
 				not empty? not-shown face/pane unread
+				not equal? unread/chat not-shown face/pane unread
 			]
 		] [
-			print "refresh required"
+;			print "refresh required"
 			messages: get-messages room-id
 			face/pane: layout/tight/only show-messages messages
 			face/pane/1/offset/y: face/size/y - face/pane/1/size/y
@@ -210,7 +211,6 @@ gritter: context [
 
 		list-chat: panel white 600x370 [] rate 1 now 
 			on-time [
-			;	print "update"
 				refresh face
 			] 
 		scroller
