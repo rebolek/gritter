@@ -76,9 +76,22 @@ marky-mark: func [
 
 	code-rule: [
 		#"`" copy value to #"`" skip (
-			append out copy text
+			repend out [copy text 'code value]
 			clear text
-			repend out ['code value] out
+		)
+	]
+
+	fenced-code-rule: [
+		0 3 space
+		copy mark ["```" | "~~~"]
+		; TODO: info string ignored for now
+		thru newline
+		copy value
+		to mark
+		thru mark
+		(
+			append out probe reduce [copy text 'code value]
+			clear text
 		)
 	]
 
@@ -89,28 +102,28 @@ marky-mark: func [
 			some alphanum
 			any alphanumsym
 		] (
-			append out reduce [copy text 'link copy value]
+			repend out [copy text 'link copy value]
 			clear text
 		)
 	]
 
 	nick-rule: [
 		copy value [#"@" copy value to space] (
-			append out reduce [copy text 'nick copy value]
+			repend out [copy text 'nick copy value]
 			clear text
 		)
 	]
 
 	em-rule: [
 		#"*" copy value to #"*" skip (
-			append out reduce [copy text 'italic copy value]
+			repend out [copy text 'italic copy value]
 			clear text		
 		)
 	]
 
 	strong-rule: [
 		"**" copy value to "**" 2 skip (
-			append out reduce [copy text 'bold copy value]
+			repend out [copy text 'bold copy value]
 			clear text		
 		)
 	]
@@ -128,6 +141,7 @@ marky-mark: func [
 		some [
 	;		mark-rule
 			nick-rule
+		|	fenced-code-rule	
 		|	code-rule	
 		|	link-rule
 		|	strong-rule
