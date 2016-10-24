@@ -234,28 +234,9 @@ gritter: context [
 
 ; ---
 
-font-text: make font! [
-	name: "Segoe UI"
-	size: 10
-	color: black
-	style: []
-	anti-alias?: yes
-]
-
-font-name: make font! [
-	name: "Segoe UI"
-	size: 9
-	color: black
-	style: [bold]
-	anti-alias?: yes
-]
-
-font-username: make font! [
-	name: "Segoe UI"
-	size: 8
-	color: gray
-	style: [bold]
-	anti-alias?: yes
+make-fonts [
+	name: 9 30.30.30 #bold
+	username: 8 100.100.100 #bold
 ]
 
 para: make para! [wrap: on]
@@ -267,7 +248,6 @@ check-over: function [
 	event-offset
 ] [
 	areas: face/extra/areas
-;	area: [size: 0x0 offset: 0x0]
 	either face/extra/highlight [
 		unless inside-face? face/extra/highlight event-offset [
 			if pos: find face/draw 'fonts/active-link [
@@ -278,8 +258,6 @@ check-over: function [
 		]
 	] [
 		foreach area areas [
-;			area/size: size
-;			area/offset: offset
 			if inside-face? area event-offset [
 				pos: find face/draw area/offset
 				if pos [
@@ -299,14 +277,14 @@ draw-header: function [
 	message
 ] [
 	f: make face! [
-		font: font-name
+		font: fonts/name
 	]
 	name-size: size-text/with f message/fromUser/displayName
 
 	msg: compose [
-		font font-name
+		font (fonts/name)
 		text 0x0 (message/fromUser/displayName)
-		font font-username
+		font (fonts/username)
 		text (as-pair name-size/x + 5 2) (rejoin [#"@" message/fromUser/username " <" message/sent ">"])
 	]
 ]
