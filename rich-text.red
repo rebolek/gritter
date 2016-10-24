@@ -11,6 +11,9 @@ Red [
 		Rich Text Dialect takes Lest source and converts it to Draw dialect
 		that can be supplied to Red/View.
 	}
+	To-Do: {
+		Links should be part of Rich Text Dialect.
+	}
 ]
 
 ; --- fonts
@@ -69,9 +72,9 @@ make-fonts [
 
 ; -----------
 
-face: make face! [
-	font: fonts/text
-]
+;face: make face! [
+;	font: fonts/text
+;]
 
 whitespace?: function [
 	char
@@ -89,13 +92,26 @@ rich-text: function [
 	/info "Return block! with output as first item and info as others (currently SIZE)"
 ] [
 
-	emit-text: does [
-		append out reduce ['text as-pair start-pos char-size/y copy line]
+	get-type: function [
+		"Return area type based on font used"
+		font
+	] [
+		font: second font ; skip fonts/
+		case [
+			equal? 'link font 	('link)
+			true 				('text)
+		]
+	]
+
+	emit-text: func [/local text] [
+		text: copy line
+		append out reduce ['text as-pair start-pos char-size/y text]
 	;	append areas reduce ['area as-pair start-pos y-pos size-text/with face copy line]
 		append areas make map! compose [
-			type: area
+			type: (area-type)
 			offset: (as-pair start-pos y-pos)
-			size: (size-text/with face copy line)
+			size: (size-text/with face text)
+			text: (text)
 		]
 		blocks: blocks + 1
 	]
@@ -105,7 +121,6 @@ rich-text: function [
 		out: tail out
 		while [not zero? blocks] [
 			if pair? out/1 [
-;				print ["y-pos" y-pos "line-height" line-height "out/1/y" out/1/y]
 				out/1/y: y-pos + line-height - out/1/y ;+ font-offset
 				blocks: blocks - 1
 			]
@@ -173,6 +188,7 @@ rich-text: function [
 	line: make string! 200
 	word: make string! 50
 	areas: make block! 50
+	area-type: none
 
 	face: make face! [
 		font: fonts/text
@@ -180,16 +196,14 @@ rich-text: function [
 
 	font-rule: [
 		'font set value [word! | path!] (
-			repend out ['font get value] 
+			repend out ['font get value]
+			area-type: get-type value
 			face/font: get value
 			font-offset: line-height - line-spacing - second size-text/with face "M"
 		)
 	]
 	text-rule: [set value string! (process-text value)]
 
-	parse 
-	dialect [
-		some [font-rule | text-rule]
-	]
+	parse dialect [some [font-rule | text-rule]]
 	either info [reduce [out as-pair width y-pos + line-height areas]] [out]
 ]
