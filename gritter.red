@@ -267,7 +267,7 @@ check-over: function [
 	event-offset
 ] [
 	areas: face/extra/areas
-	area: [size: 0x0 offset: 0x0]
+;	area: [size: 0x0 offset: 0x0]
 	either face/extra/highlight [
 		unless inside-face? face/extra/highlight event-offset [
 			if pos: find face/draw 'fonts/active-link [
@@ -277,9 +277,9 @@ check-over: function [
 			]
 		]
 	] [
-		foreach [type offset size] areas [
-			area/size: size
-			area/offset: offset
+		foreach area areas [
+;			area/size: size
+;			area/offset: offset
 			if inside-face? area event-offset [
 				pos: find face/draw area/offset
 				if pos [
