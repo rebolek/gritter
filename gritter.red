@@ -217,10 +217,12 @@ gritter: context [
 		return
 		area-input: area 580x100 ; [probe face/text]
 		button "Send" [
-			send-message room-id area-input/text
-			clear area-input/text
-			show area-input
-			refresh/force list-chat
+			unless empty? area-input/text [
+				send-message room-id area-input/text
+				clear area-input/text
+				show area-input
+				refresh/force list-chat
+			]
 		]
 		button "Info" [
 			pane-height: 0
