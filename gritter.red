@@ -25,9 +25,6 @@ system/view/auto-sync?: false
 ;		support
 ; ----------------------------------------------------------------------------
 
-token:		#e65db9f1398d88e2de150f9c98cb66aa65cf97c8 ; rebolek
-token:		#9e79748c0559875f3ba90ce385438bf0f0c52408 ; gritter
-
 either exists? %options.red [
 	do %options.red
 ] [
