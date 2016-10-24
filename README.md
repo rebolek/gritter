@@ -1,4 +1,6 @@
 # gritter
+
+[![Join the chat at https://gitter.im/red-gitter/Lobby](https://badges.gitter.im/red-gitter/Lobby.svg)](https://gitter.im/red-gitter/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Gitter client written in Red
 
 ## About
