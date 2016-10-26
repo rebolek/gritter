@@ -91,18 +91,6 @@ rich-text: function [
 	width "Width to wrap text at"
 	/info "Return block! with output as first item and info as others (currently SIZE)"
 ] [
-
-	get-type: function [
-		"Return area type based on font used"
-		font
-	] [
-		font: second font ; skip fonts/
-		case [
-			equal? 'link font 	('link)
-			true 				('text)
-		]
-	]
-
 	emit-text: func [/local text] [
 		text: copy line
 		append out reduce ['text as-pair start-pos char-size/y text]
@@ -198,12 +186,17 @@ rich-text: function [
 	font-rule: [
 		'font set value [word! | path!] (
 			repend out ['font get value]
-			area-type: get-type value
 			face/font: get value
 			font-offset: line-height - line-spacing - second size-text/with face "M"
 		)
 	]
-	text-rule: [set value string! (process-text value)]
+	text-rule: [
+		set value string! 
+		(
+			area-type: 'area
+			process-text value
+		)
+	]
 	link-rule: [
 		'link 
 		set value string! 
@@ -211,6 +204,7 @@ rich-text: function [
 		set value url!
 		(
 			repend out ['font fonts/link]
+			area-type: 'link
 			process-text take/last stack
 		)
 	]
