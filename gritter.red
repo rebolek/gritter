@@ -259,15 +259,16 @@ check-over: function [
 		]
 	] [
 		foreach area areas [
-			if inside-face? area event-offset [
+			if all [
+				equal? 'link area/type
+				inside-face? area event-offset
+			] [
 				pos: find face/draw area/offset
 				if pos [
 					pos: back back pos
-					if equal? fonts/link first pos [
-						face/extra/highlight: copy area
-						pos/1: fonts/active-link
-						show face
-					]
+					face/extra/highlight: area
+					pos/1: fonts/active-link
+					show face
 				]
 				break
 			]

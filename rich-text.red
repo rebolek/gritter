@@ -30,6 +30,7 @@ fonts/base: make font! [
 make-fonts: function [
 	spec
 ] [
+	font: none
 	styles: clear []
 	parse spec [
 		some [
@@ -72,10 +73,6 @@ make-fonts [
 
 ; -----------
 
-;face: make face! [
-;	font: fonts/text
-;]
-
 whitespace?: function [
 	char
 ] [
@@ -92,20 +89,21 @@ rich-text: function [
 	/info "Return block! with output as first item and info as others (currently SIZE)"
 ] [
 	emit-text: func [/local text area] [
-		text: copy line
-		append out reduce ['text as-pair start-pos char-size/y text]
-	;	append areas reduce ['area as-pair start-pos y-pos size-text/with face copy line]
-		area: make map! compose [
-			type: (area-type)
-			offset: (as-pair start-pos y-pos)
-			size: (size-text/with face text)
-			text: (text)
+		unless empty? line [
+			text: copy line
+			append out reduce ['text as-pair start-pos char-size/y text]
+			area: make map! compose [
+				type: (area-type)
+				offset: (as-pair start-pos y-pos)
+				size: (size-text/with face text)
+				text: (text)
+			]
+			if equal? 'link area-type [
+				area/link: take/last stack
+			]
+			append areas area
+			blocks: blocks + 1
 		]
-		if equal? 'link area-type [
-			area/link: take/last stack
-		]
-		append areas area
-		blocks: blocks + 1
 	]
 
 	fix-height: does [
@@ -187,12 +185,17 @@ rich-text: function [
 		font: fonts/text
 	]
 
+	set-font: func [
+		font
+	] [
+		repend out ['font font]
+		face/font: font
+		font-offset: line-height - line-spacing - second size-text/with face "M"
+	]
+
 	font-rule: [
-		'font set value [word! | path!] (
-			repend out ['font get value]
-			face/font: get value
-			font-offset: line-height - line-spacing - second size-text/with face "M"
-		)
+		'font set value [word! | path!] 
+		(set-font get value)
 	]
 	text-rule: [
 		set value string! 
@@ -208,7 +211,7 @@ rich-text: function [
 		set value url!
 		(
 			append stack value
-			repend out ['font fonts/link]
+			set-font fonts/link
 			area-type: 'link
 			; TODO:  penultimate: func [series] [skip tail series -2]
 			process-text take skip tail stack -2
