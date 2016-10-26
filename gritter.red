@@ -6,8 +6,9 @@ Red [
 	License: {
 		Distributed under the Boost Software License, Version 1.0.
 	}
-	Date: "23-10-2016"
+	Date: "26-10-2016"
 	Note: {
+		Split rooms / one to one by Arnold
 	}
 ]
 
@@ -148,12 +149,9 @@ gritter: context [
 		face
 		one-to-one
 		/force
-		/local local-room-id
 	] [
 ;		prin ["get unread..."]
-		local-room-id: room-id
-
-		unread: list-unread user-id local-room-id
+		unread: list-unread user-id room-id
 ;		print ["done." force unread/chat not-shown face/pane unread]
 		if any [
 			force
@@ -164,7 +162,7 @@ gritter: context [
 			]
 		] [
 ;			print "refresh required"
-			messages: get-messages local-room-id
+			messages: get-messages room-id
 			face/pane: layout/tight/only show-messages messages
 			face/pane/1/offset/y: face/size/y - face/pane/1/size/y
 			show face
