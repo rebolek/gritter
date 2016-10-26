@@ -247,6 +247,7 @@ check-over: function [
 	face
 	event-offset
 ] [
+	; TODO: rewrite using 'check-up code
 	areas: face/extra/areas
 	either face/extra/highlight [
 		unless inside-face? face/extra/highlight event-offset [
@@ -259,7 +260,6 @@ check-over: function [
 	] [
 		foreach area areas [
 			if inside-face? area event-offset [
-			;	print ["inbside:" area]
 				pos: find face/draw area/offset
 				if pos [
 					pos: back back pos
@@ -269,9 +269,24 @@ check-over: function [
 						show face
 					]
 				]
-			]		
+				break
+			]
 		]
 	] 
+]
+
+check-up: function [
+	face
+	event-offset
+] [
+	foreach area face/extra/areas [
+		all [
+			equal? 'link area/type
+			inside-face? area event-offset
+			browse area/link
+			break
+		]
+	]
 ]
 
 draw-header: function [
@@ -330,7 +345,7 @@ draw-body: function [
 				check-over face event/offset
 			]
 			on-up [
-				print "on-up"
+				check-up face event/offset
 			]
 		]
 ]

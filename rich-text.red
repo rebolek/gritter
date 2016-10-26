@@ -91,16 +91,20 @@ rich-text: function [
 	width "Width to wrap text at"
 	/info "Return block! with output as first item and info as others (currently SIZE)"
 ] [
-	emit-text: func [/local text] [
+	emit-text: func [/local text area] [
 		text: copy line
 		append out reduce ['text as-pair start-pos char-size/y text]
 	;	append areas reduce ['area as-pair start-pos y-pos size-text/with face copy line]
-		append areas make map! compose [
+		area: make map! compose [
 			type: (area-type)
 			offset: (as-pair start-pos y-pos)
 			size: (size-text/with face text)
 			text: (text)
 		]
+		if equal? 'link area-type [
+			area/link: take/last stack
+		]
+		append areas area
 		blocks: blocks + 1
 	]
 
@@ -203,9 +207,11 @@ rich-text: function [
 		(append stack value)
 		set value url!
 		(
+			append stack value
 			repend out ['font fonts/link]
 			area-type: 'link
-			process-text take/last stack
+			; TODO:  penultimate: func [series] [skip tail series -2]
+			process-text take skip tail stack -2
 		)
 	]
 
