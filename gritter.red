@@ -329,6 +329,9 @@ draw-body: function [
 				; having check-over here directly crashes Red
 				check-over face event/offset
 			]
+			on-up [
+				print "on-up"
+			]
 		]
 ]
 

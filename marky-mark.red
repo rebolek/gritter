@@ -18,6 +18,8 @@ marky-mark: func [
 ] [
 	out: make block! 5'000
 	text: make string! 2'000
+	value: make string! 500
+	stack: make block! 20
 	; ---
 
 	store: [
@@ -96,13 +98,29 @@ marky-mark: func [
 	]
 
 	link-rule: [
+		#"["
+		copy value 
+		to #"]" ; TODO: should be much less forgiving
+		skip
+		(append stack value)
+		#"("
+		copy value
+		to ")"	; TODO: see above
+		skip
+		(
+			append out reduce [copy text 'link take/last stack to url! copy value]
+			clear text
+		)
+	]
+
+	auto-link-rule: [
 		copy value [
 			["https" | "http"] "://" 
 			some [some alphanum dot] 
 			some alphanum
 			any alphanumsym
 		] (
-			repend out [copy text 'link copy value]
+			append out reduce [copy text 'link copy value to url! value]
 			clear text
 		)
 	]
@@ -144,6 +162,7 @@ marky-mark: func [
 		|	fenced-code-rule	
 		|	code-rule	
 		|	link-rule
+		|	auto-link-rule
 		|	strong-rule
 		|	em-rule
 		|	para-char-rule
@@ -162,6 +181,8 @@ marky-mark: func [
 emit-rich: function [
 	data
 ] [
+	value: none
+	stack: make block! 20
 	out: make block! 2 * length? data
 	parse data [
 		some [
@@ -170,7 +191,7 @@ emit-rich: function [
 		|	'italic set value string! (repend out ['font 'fonts/italic value])
 		|	'code set value string! (repend out ['font 'fonts/fixed value])
 		|	'nick set value string! (repend out ['font 'fonts/underline value])
-		|	'link set value string! (repend out ['font 'fonts/link value])
+		|	'link set value string! (append stack value) set value url! (repend out ['link take/last stack value])
 		]
 	]
 	out

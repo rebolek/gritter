@@ -177,6 +177,7 @@ rich-text: function [
 	out: make block! 2000
 	font: none
 	value: none
+	stack: make block! 20
 	line-width: 0
 	start-pos: 0
 	x-pos: 0
@@ -203,7 +204,17 @@ rich-text: function [
 		)
 	]
 	text-rule: [set value string! (process-text value)]
+	link-rule: [
+		'link 
+		set value string! 
+		(append stack value)
+		set value url!
+		(
+			repend out ['font fonts/link]
+			process-text take/last stack
+		)
+	]
 
-	parse dialect [some [font-rule | text-rule]]
+	parse dialect [some [font-rule | link-rule | text-rule]]
 	either info [reduce [out as-pair width y-pos + line-height areas]] [out]
 ]
