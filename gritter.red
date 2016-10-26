@@ -59,6 +59,20 @@ average-color: function [
 	clr
 ]
 
+unless value? 'rejoin [
+	rejoin: func [
+		"Reduces and joins a block of values." 
+		block [block!] "Values to reduce and join"
+	] [
+		if empty? block: reduce block [return block] 
+		append either series? first block [
+			copy first block
+		] [
+			form first block
+		] 
+		next block
+	]
+]
 
 ; ----------------------------------------------------------------------------
 ;		GUI
@@ -69,23 +83,43 @@ gritter: context [
 	; TODO: token here?
 	info: user-info
 	user-id: info/id
+
+	last-select: 0
 	room-ids: none
 	data-rooms: none
+	room-1-1-ids: none
+	data-1-1-rooms: none
 	data-chat: none
-	room-id: func [] [if all [room-ids list-rooms/selected] [pick room-ids list-rooms/selected]]
-
+	room-id: func [
+	][
+		either last-select = 0 [
+			if all [room-ids list-rooms/selected] [pick room-ids list-rooms/selected]
+		][
+			if all [room-1-1-ids list-1-1-rooms/selected] [pick room-1-1-ids list-1-1-rooms/selected]
+		]
+	]
+	
 	init: func [
 		/local rooms chat
 	] [
 		rooms: user-rooms user-id
+		;probe rooms
 		data-rooms: collect [
-			foreach room rooms [keep room/name]
+			foreach room rooms [if room/githubType <> "ONETOONE" [keep room/name]]
+		]
+		data-1-1-rooms: collect [
+			foreach room rooms [if room/githubType = "ONETOONE" [keep rejoin [room/user/username " - " room/name]]]
 		]
 		room-ids: collect [
-			foreach room rooms [keep room/id]
+			foreach room rooms [if room/githubType <> "ONETOONE" [keep room/id]]
+		]
+		room-1-1-ids: collect [
+			foreach room rooms [if room/githubType = "ONETOONE" [keep room/id]]
 		]
 		list-rooms/data: data-rooms
 		list-rooms/selected: 1 ; TODO: remember last selection
+		list-1-1-rooms/data: data-1-1-rooms
+		list-1-1-rooms/selected: 1 ; TODO: remember last selection
 
 		messages: get-messages room-id
 		list-chat/pane: layout/tight/only show-messages messages
@@ -112,20 +146,25 @@ gritter: context [
 	refresh: function [
 		"Refresh list-chat"
 		face
+		one-to-one
 		/force
+		/local local-room-id
 	] [
-		prin ["get unread..."]
-		unread: list-unread user-id room-id
-		print "done."
+;		prin ["get unread..."]
+		local-room-id: room-id
+
+		unread: list-unread user-id local-room-id
+;		print ["done." force unread/chat not-shown face/pane unread]
 		if any [
 			force
 			all [
 				not empty? unread/chat
 				not empty? not-shown face/pane unread
+				not equal? unread/chat not-shown face/pane unread
 			]
 		] [
-			print "refresh required"
-			messages: get-messages room-id
+;			print "refresh required"
+			messages: get-messages local-room-id
 			face/pane: layout/tight/only show-messages messages
 			face/pane/1/offset/y: face/size/y - face/pane/1/size/y
 			show face
@@ -189,24 +228,31 @@ gritter: context [
 			]
 
 		group-box 220x370 "Rooms" [
-			list-rooms: text-list 200x350 data data-rooms [
-				refresh/force list-chat
+			list-rooms: text-list 200x350 extra 0 data data-rooms [
+				last-select: 0
+				refresh/force list-chat last-select
 			]
 		]
-
+		group-box 220x370 "One to One Rooms" [
+			list-1-1-rooms: text-list 200x350 extra 1 data data-1-1-rooms [
+				last-select: 1
+				refresh/force list-chat last-select
+			]
+		]
 		list-chat: panel white 600x370 [] rate 1 now 
 			on-time [
-			;	print "update"
-				refresh face
+				refresh face last-select
 			] 
 		scroller
 		return
 		area-input: area 580x100 ; [probe face/text]
 		button "Send" [
-			send-message room-id area-input/text
-			clear area-input/text
-			show area-input
-			refresh/force list-chat
+			unless empty? area-input/text [
+				send-message room-id area-input/text
+				clear area-input/text
+				show area-input
+				refresh/force list-chat
+			]
 		]
 		button "Info" [
 			pane-height: 0
@@ -218,28 +264,9 @@ gritter: context [
 
 ; ---
 
-font-text: make font! [
-	name: "Segoe UI"
-	size: 10
-	color: black
-	style: []
-	anti-alias?: yes
-]
-
-font-name: make font! [
-	name: "Segoe UI"
-	size: 9
-	color: black
-	style: [bold]
-	anti-alias?: yes
-]
-
-font-username: make font! [
-	name: "Segoe UI"
-	size: 8
-	color: gray
-	style: [bold]
-	anti-alias?: yes
+make-fonts [
+	name: 9 30.30.30 #bold
+	username: 8 100.100.100 #bold
 ]
 
 para: make para! [wrap: on]
@@ -251,26 +278,24 @@ check-over: function [
 	event-offset
 ] [
 	areas: face/extra/areas
-	area: [size: 0x0 offset: 0x0]
 	either face/extra/highlight [
 		unless inside-face? face/extra/highlight event-offset [
-			if pos: find face/draw 'active-link-font [
-				pos/1: 'link-font
+			if pos: find face/draw fonts/active-link [
+				pos/1: fonts/link
 				face/extra/highlight: none
 				show face
 			]
 		]
 	] [
-		foreach [type offset size] areas [
-			area/size: size
-			area/offset: offset
+		foreach area areas [
 			if inside-face? area event-offset [
+			;	print ["inbside:" area]
 				pos: find face/draw area/offset
 				if pos [
 					pos: back back pos
-					if equal? 'link-font first pos [
+					if equal? fonts/link first pos [
 						face/extra/highlight: copy area
-						pos/1: 'active-link-font
+						pos/1: fonts/active-link
 						show face
 					]
 				]
@@ -283,14 +308,14 @@ draw-header: function [
 	message
 ] [
 	f: make face! [
-		font: font-name
+		font: fonts/name
 	]
 	name-size: size-text/with f message/fromUser/displayName
 
 	msg: compose [
-		font font-name
+		font (fonts/name)
 		text 0x0 (message/fromUser/displayName)
-		font font-username
+		font (fonts/username)
 		text (as-pair name-size/x + 5 2) (rejoin [#"@" message/fromUser/username " <" message/sent ">"])
 	]
 ]
@@ -360,4 +385,6 @@ show-messages: function [
 
 gritter/init
 
-save %options.red compose [token: (token)]
+if not exists? %options.red [
+	save %options.red compose [token: (token)]
+]
