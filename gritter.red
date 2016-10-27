@@ -89,11 +89,19 @@ gritter: context [
 	room-id: func [] [if all [room-ids list-rooms/selected] [pick room-ids list-rooms/selected]]
 
 	init: func [
-		/local rooms chat
+		/local rooms chat newitems unreaditems
 	] [
 		rooms: user-rooms user-id
 		data-rooms: collect [
-			foreach room rooms [keep room/name]
+			foreach room rooms [
+				newitems: room/unreadItems
+				unreaditems: either 0 = newitems [copy ""][rejoin [">" newitems "> "]]
+				either room/oneToOne [
+					keep rejoin [unreaditems room/user/username " - " room/name]
+				] [
+					keep rejoin ["[R] " unreaditems room/name]
+				]
+			]
 		]
 		room-ids: collect [
 			foreach room rooms [keep room/id]
