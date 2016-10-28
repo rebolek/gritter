@@ -374,4 +374,6 @@ show-messages: function [
 
 gritter/init
 
-save %options.red compose [token: (token)]
+if not exists? %options.red [					;-- No need to save every time, token does not change often
+	save %options.red compose [token: (token)]
+]
