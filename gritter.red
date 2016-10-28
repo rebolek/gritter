@@ -148,6 +148,7 @@ gritter: context [
 	]
 
 	main-lay: layout [
+		title "Gritter - A Red Gitter Client"
 		style scroller: image 12x370 draw []
 			on-create [
 				face/extra: object [
