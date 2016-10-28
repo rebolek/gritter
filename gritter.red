@@ -89,17 +89,16 @@ gritter: context [
 	room-id: func [] [if all [room-ids list-rooms/selected] [pick room-ids list-rooms/selected]]
 
 	init: func [
-		/local rooms chat newitems unreaditems
+		/local rooms chat newmessage
 	] [
 		rooms: user-rooms user-id
 		data-rooms: collect [
 			foreach room rooms [
-				newitems: room/unreadItems
-				unreaditems: either 0 = newitems [copy ""][rejoin [">" newitems "> "]]
+				newmessage: either room/activity [copy "MSG> "][copy ""]
 				either room/oneToOne [
-					keep rejoin [unreaditems room/user/username " - " room/name]
+					keep rejoin [newmessage room/user/username " - " room/name]
 				] [
-					keep rejoin ["[R] " unreaditems room/name]
+					keep rejoin [newmessage "[R] " room/name]
 				]
 			]
 		]
