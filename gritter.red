@@ -80,12 +80,20 @@ unless value? 'rejoin [
 
 
 gritter: context [
+	; faces
+	list-chat: none
+	list-rooms: none
+	area-input: none
+	scroller-chat: none
+	buttons: none
+	; other values
 	; TODO: token here?
 	info: user-info
 	user-id: info/id
 	room-ids: none
 	data-rooms: none
 	data-chat: none
+	messages: none 		; messages cache
 	room-id: func [] [if all [room-ids list-rooms/selected] [pick room-ids list-rooms/selected]]
 
 	init: func [
@@ -101,9 +109,40 @@ gritter: context [
 		list-rooms/data: data-rooms
 		list-rooms/selected: 1 ; TODO: remember last selection
 
-		messages: get-messages room-id
-		list-chat/pane: layout/tight/only show-messages messages
-		view gui
+		view/no-wait/flags gui [resize]
+		
+		refresh/force list-chat ; FIXME: no messages on first view
+		
+		; patch GUI for resizing
+
+		gui/extra: object [
+			old-size: gui/size
+		]
+
+		gui/actors: object [
+			on-resizing: func [face [object!] event [event!] /local delta][
+				delta: face/size - face/extra/old-size
+				
+				list-chat/size: list-chat/size + delta
+				
+				scroller-chat/offset/x: scroller-chat/offset/x + delta/x
+				scroller-chat/size/y: scroller-chat/size/y + delta/y
+				scroller-chat/extra/redraw scroller-chat
+
+				area-input/offset/y: area-input/offset/y + delta/y
+				area-input/size/x: area-input/size/x + delta/x
+				
+				buttons/offset: buttons/offset + delta/y
+				buttons/size/x: buttons/size/x + delta/x
+				
+				refresh/only list-chat
+				show [list-chat scroller-chat area-input buttons]
+				face/extra/old-size: face/size
+			]
+		]
+
+		do-events
+
 	]
 
 	not-shown: function [
@@ -125,12 +164,14 @@ gritter: context [
 	refresh: function [
 		"Refresh list-chat"
 		face
-		/force
+		/only 	"Refresh only and do not check for new messages"
+		/force 	"Force refresh even if there are no new messages"
+		/extern messages
 	] [
-;		prin ["get unread..."]
-		unread: list-unread user-id room-id
-;		print ["done." force unread/chat not-shown face/pane unread]
+		print ["refresh" now/time/precise]
+		unless only [unread: list-unread user-id room-id]
 		if any [
+			only
 			force
 			all [
 				not empty? unread/chat
@@ -138,9 +179,8 @@ gritter: context [
 				not equal? unread/chat not-shown face/pane unread
 			]
 		] [
-;			print "refresh required"
-			messages: get-messages room-id
-			face/pane: layout/tight/only show-messages messages
+			unless only [messages: get-messages room-id]
+			face/pane: layout/tight/only show-messages/width messages face/size/x - 70
 			face/pane/1/offset/y: face/size/y - face/pane/1/size/y
 			show face
 		] 
@@ -259,13 +299,17 @@ gritter: context [
 	]
 
 	show-messages: function [
-		messages
+		"Generate VID block of messages"
+		messages 	[block!]	"Messages to show"
+		/width					"Use custom width"
+			size 				"Custom width value"
 		/extern bg-color
 	] [
+		unless width [size: 530]
 		out: copy []
 		foreach message messages [
-			bg-color: 4 * random 255.255.255
-			body: rich-text/info emit-rich marky-mark message/text 530
+			bg-color: 240.240.240 ;4 * random 255.255.255
+			body: rich-text/info emit-rich marky-mark message/text size
 			append out compose/deep [
 				base (bg-color) 600x20 draw [(draw-header message)]
 				return
@@ -311,11 +355,14 @@ gritter: context [
 		]
 		list-chat: panel white 600x370 [] rate 1 now 
 			on-time [refresh face] 
-		scroller
+		scroller-chat: scroller
 		return
-		area-input: area 580x100
-		button "Send" [actions/send-message]
-		button "Info" [actions/show-info]
+		area-input: area 760x100
+		buttons: panel [
+			below
+			button "Send" [actions/send-message]
+			button "Info" [actions/show-info]
+		]
 	] 
 ]
 
