@@ -86,6 +86,7 @@ gritter: context [
 	area-input: none
 	scroller-chat: none
 	buttons: none
+
 	; other values
 	; TODO: token here?
 	info: user-info
@@ -182,7 +183,15 @@ gritter: context [
 			unless only [messages: get-messages room-id]
 			face/pane: layout/tight/only show-messages/width messages face/size/x - 70
 			face/pane/1/offset/y: face/size/y - face/pane/1/size/y
-			show face
+			scroller-chat/data: 100%
+			; update scroller bar size
+			ratio: to percent! face/size/y * 1.0 / face/pane/1/size/y
+			unless equal? ratio scroller-chat/extra/ratio [
+				scroller-chat/extra/ratio: ratio
+				scroller-chat/extra/redraw scroller-chat
+				show scroller-chat
+			]
+			show [face scroller-chat]
 		] 
 	]
 
