@@ -111,7 +111,8 @@ gritter: context [
 		list-rooms/selected: 1 ; TODO: remember last selection
 
 		view/no-wait/flags gui [resize]
-		
+
+		scroller-chat/data: 100%		
 		refresh/force list-chat ; FIXME: no messages on first view
 		
 		; patch GUI for resizing
@@ -182,8 +183,8 @@ gritter: context [
 		] [
 			unless only [messages: get-messages room-id]
 			face/pane: layout/tight/only show-messages/width messages face/size/x - 70
-			face/pane/1/offset/y: face/size/y - face/pane/1/size/y
-			scroller-chat/data: 100%
+			face/pane/1/offset/y: to integer! face/size/y - face/pane/1/size/y * scroller-chat/data
+;			scroller-chat/data: 100%
 			; update scroller bar size
 			ratio: to percent! face/size/y * 1.0 / face/pane/1/size/y
 			unless equal? ratio scroller-chat/extra/ratio [
