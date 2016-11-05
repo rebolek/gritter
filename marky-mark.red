@@ -125,7 +125,7 @@ marky-mark: func [
 	]
 
 	nick-rule: [
-		#"@" copy value to space ; TODO: improve ending condition
+		copy value [#"@" to space] ; TODO: improve ending condition
 		(emit ['nick value])
 	]
 
