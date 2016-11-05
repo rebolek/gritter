@@ -211,7 +211,7 @@ emit-rich: function [
 		|	'bold set value string! (repend out ['font 'fonts/bold value])
 		|	'italic set value string! (repend out ['font 'fonts/italic value])
 		|	'code set value string! (repend out ['font 'fonts/fixed value])
-		|	'nick set value string! (repend out ['font 'fonts/underline value])
+		|	'nick set value string! (repend out ['font 'fonts/nick value])
 		|	'link set value string! (append stack value) set value url! (repend out ['link take/last stack value])
 		|	emoji-rule
 		]

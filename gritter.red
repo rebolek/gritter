@@ -245,7 +245,7 @@ gritter: context [
 
 ; -- draw message
 
-	bg-color: 240.240.240
+	bg-color: 253.246.227
 
 	draw-header: function [
 		message
@@ -318,7 +318,7 @@ gritter: context [
 		unless width [size: 530]
 		out: copy []
 		foreach message messages [
-			bg-color: 240.240.240 ;4 * random 255.255.255
+			bg-color: 253.246.227 ;4 * random 255.255.255
 			body: rich-text/info emit-rich marky-mark message/text size
 			append out compose/deep [
 				base (bg-color) 600x20 draw [(draw-header message)]
@@ -329,7 +329,7 @@ gritter: context [
 				return
 			]
 		]
-		compose/deep [across space 0x0 panel 240.240.240 [(out)]]
+		compose/deep [across space 0x0 panel 253.246.227 [(out)]]
 	]
 
 	css: stylize load %styles.red

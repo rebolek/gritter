@@ -62,14 +62,15 @@ make-fonts: function [
 ]
 
 make-fonts [
-	text: base 10
+	text: base 10 0.43.54
 	bold: #bold
 	italic: #italic
 	underline: #underline
-	link: #bold 120.60.60
-	active-link: #bold 220.160.160
+	link: #bold 7.54.66
+	active-link: #bold 14.104.132
 	fixed: "Lucida Console"
-	emoji: "Segoe UI Symbol" 12 #bold 200.160.40
+	nick: underline 42.161.152
+	emoji: "Segoe UI Symbol" 12 #bold 38.139.210
 ]
 
 ; -----------
