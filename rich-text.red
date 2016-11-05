@@ -69,7 +69,7 @@ make-fonts [
 	link: #bold 120.60.60
 	active-link: #bold 220.160.160
 	fixed: "Lucida Console"
-	emoji: "Segoe UI Symbol" 12 #bold 240.200.40
+	emoji: "Segoe UI Symbol" 12 #bold 200.160.40
 ]
 
 ; -----------

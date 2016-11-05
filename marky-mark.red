@@ -53,6 +53,15 @@ marky-mark: func [
 		]
 	]
 
+	emit: func [
+		value [block!]
+	] [
+		append out compose [(copy text) (reduce value)]
+		clear text
+	]
+
+	; --- parse rules
+
 	mark-rule: [
 		(temp-pos: clear temp)
 		copy mark ["**" | "__" | "*" | "_" | "`"]
@@ -78,10 +87,7 @@ marky-mark: func [
 	; ---
 
 	code-rule: [
-		#"`" copy value to #"`" skip (
-			repend out [copy text 'code value]
-			clear text
-		)
+		#"`" copy value to #"`" skip (emit ['code value])
 	]
 
 	fenced-code-rule: [
@@ -92,10 +98,7 @@ marky-mark: func [
 		copy value
 		to mark
 		thru mark
-		(
-			repend out [copy text 'code value]
-			clear text
-		)
+		(emit ['code value])
 	]
 
 	link-rule: [
@@ -108,10 +111,7 @@ marky-mark: func [
 		copy value
 		to ")"	; TODO: see above
 		skip
-		(
-			append out reduce [copy text 'link take/last stack to url! copy value]
-			clear text
-		)
+		(emit ['link take/last stack to url! value])
 	]
 
 	auto-link-rule: [
@@ -120,31 +120,23 @@ marky-mark: func [
 			some [some alphanum dot] 
 			some alphanum
 			any alphanumsym
-		] (
-			append out reduce [copy text 'link copy value to url! value]
-			clear text
-		)
+		] 
+		(emit ['link value to url! value])
 	]
 
 	nick-rule: [
-		copy value [#"@" copy value to space] (
-			repend out [copy text 'nick copy value]
-			clear text
-		)
+		#"@" copy value to space ; TODO: improve ending condition
+		(emit ['nick value])
 	]
 
 	em-rule: [
-		#"*" copy value to #"*" skip (
-			repend out [copy text 'italic copy value]
-			clear text		
-		)
+		#"*" copy value to #"*" skip 
+		(emit ['italic value])
 	]
 
 	strong-rule: [
-		"**" copy value to "**" 2 skip (
-			repend out [copy text 'bold copy value]
-			clear text		
-		)
+		"**" copy value to "**" 2 skip 
+		(emit ['bold value])
 	]
 
 	para-char-rule: [
@@ -162,7 +154,7 @@ marky-mark: func [
 		#":" 
 		copy value [some emoji-chars]
 		#":" 
-		(repend out [copy text 'emoji to word! value])
+		(emit ['emoji to word! value])
 	]
 
 ; ---
