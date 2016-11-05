@@ -31,11 +31,12 @@ marky-mark: func [
 		)
 	]
 
-	digits: charset [#"0" - #"9"]
-	letters: charset [#"a" - #"z" #"A" - #"Z"]
-	alphanum: union digits letters
-	symbols: charset "@#$~&-/*%()[]{}=+<>,."
-	alphanumsym: union alphanum symbols
+	digits: 		charset [#"0" - #"9"]
+	letters: 		charset [#"a" - #"z" #"A" - #"Z"]
+	alphanum: 		union digits letters
+	symbols: 		charset "@#$~&-/*%()[]{}=+<>,."
+	alphanumsym: 	union alphanum symbols
+	emoji-chars: 	charset [#"a" - #"z" #"0" - #"9" #"_"]
 
 	; ---
 
@@ -155,6 +156,17 @@ marky-mark: func [
 	|	set value skip
 	]
 
+; --- additional rules
+
+	emoji-rule: [
+		#":" 
+		copy value [some emoji-chars]
+		#":" 
+		(repend out [copy text 'emoji to word! value])
+	]
+
+; ---
+
 	rules: [
 		some [
 	;		mark-rule
@@ -165,6 +177,9 @@ marky-mark: func [
 		|	auto-link-rule
 		|	strong-rule
 		|	em-rule
+		; additional rules
+		|	emoji-rule
+		; catch all rule
 		|	para-char-rule
 		]
 	]
@@ -176,7 +191,7 @@ marky-mark: func [
 	copy out
 ]
 
-; ---
+; --- Lest
 
 emit-rich: function [
 	data
@@ -184,6 +199,20 @@ emit-rich: function [
 	value: none
 	stack: make block! 20
 	out: make block! 2 * length? data
+	emoji-rule: [
+		'emoji set value word! (
+			; TODO: improve this switch to support images also
+			;		move TYPE out somewhere to settings
+			type: 'plain-text ; unicode, image
+			get-emoji: func [values] [pick values index? find [plain-text unicode] type]
+			append out probe reduce [
+				'font 'fonts/emoji probe get-emoji probe switch value [
+					smile smiley 	[[":)" "😀"]]
+					disappointed 	[[":(" "😞"]]
+				]
+			]
+		)
+	]
 	parse data [
 		some [
 			set value string! (repend out ['font 'fonts/text value])
@@ -192,6 +221,7 @@ emit-rich: function [
 		|	'code set value string! (repend out ['font 'fonts/fixed value])
 		|	'nick set value string! (repend out ['font 'fonts/underline value])
 		|	'link set value string! (append stack value) set value url! (repend out ['link take/last stack value])
+		|	emoji-rule
 		]
 	]
 	out

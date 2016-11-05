@@ -69,6 +69,7 @@ make-fonts [
 	link: #bold 120.60.60
 	active-link: #bold 220.160.160
 	fixed: "Lucida Console"
+	emoji: "Segoe UI Symbol" 12 #bold 240.200.40
 ]
 
 ; -----------
@@ -80,7 +81,6 @@ whitespace?: function [
 ]
 
 ; ----------------
-
 
 rich-text: function [
 	"Return Draw block created from Rich Text Dialect"
@@ -215,6 +215,16 @@ rich-text: function [
 			area-type: 'link
 			; TODO:  penultimate: func [series] [skip tail series -2]
 			process-text take skip tail stack -2
+		)
+	]
+
+	image-rule: [
+		'image
+		set value file!
+		(
+		;	set 'some-image load value
+		;	append out [image some-image 0x0 20x20]
+		;	process-text " :) "
 		)
 	]
 
