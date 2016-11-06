@@ -78,6 +78,10 @@ unless value? 'rejoin [
 ;		GUI
 ; ----------------------------------------------------------------------------
 
+colors: context [
+;	background: 253.246.227 ; light
+	background: 0.43.54 	; dark
+]
 
 gritter: context [
 	; faces
@@ -245,8 +249,6 @@ gritter: context [
 
 ; -- draw message
 
-	bg-color: 253.246.227
-
 	draw-header: function [
 		message
 	] [
@@ -288,7 +290,7 @@ gritter: context [
 		body
 	] [
 		compose/deep [
-			base (bg-color) (body/2) 
+			base (colors/background) (body/2) 
 				draw [(body/1)] 
 				extra (make object! [
 					id: message/id
@@ -313,15 +315,14 @@ gritter: context [
 		messages 	[block!]	"Messages to show"
 		/width					"Use custom width"
 			size 				"Custom width value"
-		/extern bg-color
+		/extern colors
 	] [
 		unless width [size: 530]
 		out: copy []
 		foreach message messages [
-			bg-color: 253.246.227 ;4 * random 255.255.255
 			body: rich-text/info emit-rich marky-mark message/text size
 			append out compose/deep [
-				base (bg-color) 600x20 draw [(draw-header message)]
+				base (colors/background) 600x20 draw [(draw-header message)]
 				return
 				(draw-avatar message body/2/y)
 				space 5x0
@@ -329,7 +330,7 @@ gritter: context [
 				return
 			]
 		]
-		compose/deep [across space 0x0 panel 253.246.227 [(out)]]
+		compose/deep [across space 0x0 panel (colors/background) [(out)]]
 	]
 
 	css: stylize load %styles.red
@@ -378,10 +379,17 @@ gritter: context [
 
 ; ---
 
+; light
 make-fonts [
-	name: 9 30.30.30 #bold
-	username: 8 100.100.100 #bold
+	name: 9 147.161.161 #bold
+	username: 8 131.148.150 #bold
 ]
+; dark
+make-fonts [
+	name: 9 88.110.117 #bold
+	username: 8 101.123.131 #bold
+]
+
 
 avatars: copy []
 

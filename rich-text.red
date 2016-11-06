@@ -22,7 +22,7 @@ fonts: #()
 fonts/base: make font! [
 	name: "Segoe UI"
 	size: 10
-	color: 30.30.30
+	color: 101.123.131 ; light: 131.148.150
 	style: []
 	anti-alias?: yes
 ]
@@ -34,15 +34,15 @@ make-fonts: function [
 	styles: clear []
 	parse spec [
 		some [
-			set font set-word! (
-				clear styles
-				parent: fonts/base
-				name: parent/name
-				size: parent/size
-				color: parent/color
-				parent: 'base
-			)
+			set font set-word! 
 			opt [set parent word!]
+			(
+				parent-font: fonts/:parent
+				clear styles
+				name: parent-font/name
+				size: parent-font/size
+				color: parent-font/color
+			)
 			any [
 				set name string!
 			|	set size integer!
@@ -50,7 +50,7 @@ make-fonts: function [
 			|	set style issue! (append styles load form style)	
 			]
 			(
-				fonts/:font: make fonts/:parent compose/deep [
+				fonts/:font: make fonts/:parent probe compose/deep [
 					name: (name)
 					size: (size)
 					color: (color)
@@ -61,16 +61,33 @@ make-fonts: function [
 	]
 ]
 
+; FIXME: when using FONT-NAME in definition, new font is not based on it!!!
+; TODO: word! and path! support for colors (font parent as lit- or get-word)
+
+; light
 make-fonts [
-	text: base 10 0.43.54
-	bold: #bold
-	italic: #italic
+	text: base 10 88.110.117
+	bold: text #bold
+	italic: text #italic
 	underline: #underline
-	link: #bold 7.54.66
-	active-link: #bold 14.104.132
-	fixed: "Lucida Console"
-	nick: underline 42.161.152
-	emoji: "Segoe UI Symbol" 12 #bold 38.139.210
+	link: #bold 38.139.210
+	active-link: link #underline
+	fixed: "Lucida Console" 42.161.152
+	nick: underline 181.137.0
+	emoji: "Segoe UI Symbol" 12 #bold 203.75.22
+]
+
+; dark
+make-fonts [
+	text: base 10 147.161.161
+	bold: text #bold
+	italic: text #italic
+	underline: #underline
+	link: #bold 38.139.210
+	active-link: link #underline
+	fixed: "Lucida Console" 42.161.152
+	nick: underline 181.137.0
+	emoji: "Segoe UI Symbol" 12 #bold 203.75.22
 ]
 
 ; -----------
