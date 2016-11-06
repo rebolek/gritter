@@ -11,10 +11,14 @@ scroller: image 12x370 draw []
 			knob-pos: offset	; absolute knob start
 			knob-size: 0 		; absolute knob size
 
-			outer-outline: 220.220.220
-			outer-fill: 'off
-			inner-outline: 220.220.220
-			inner-fill: 160.160.160
+			outer-outline: 		220.220.220
+			outer-fill: 		'off
+			inner-outline: 		220.220.220
+			inner-fill-away: 	160.160.160
+			inner-fill-over: 	120.120.120
+			inner-fill:			inner-fill-away
+
+			fade-in?: 			true
 
 			process-event: function [face event] [
 				area-size: face/size/y - face/extra/offset
@@ -56,6 +60,14 @@ scroller: image 12x370 draw []
 		face/extra/drag?: no
 	]		
 	on-over [
+;		print ["on-over detected" event/away?]
+; anim
+		face/extra/fade-in?: not event/away?
+		; TODO: prevent fade when fully faded on over
+		face/rate: 30
+		show face
+
+; drag
 		if face/extra/drag? [
 			face/extra/process-event face event
 			face/extra/redraw face
@@ -63,4 +75,23 @@ scroller: image 12x370 draw []
 			prev-face/pane/1/offset/y: to integer! face/data * (prev-face/size/y - prev-face/pane/1/size/y)
 			show reduce [face prev-face]
 		]
+	]
+	on-time [
+		step: 30.30.30
+		action: none
+		condition: none
+		set [action condition] either face/extra/fade-in? [
+			[- [<= face/extra/inner-fill-over]]
+		] [
+			[+ [>= face/extra/inner-fill-away]]
+		]
+		do compose/deep [
+			face/extra/inner-fill: face/extra/inner-fill (action) step
+			if face/extra/inner-fill (condition) [
+				face/extra/inner-fill: (second condition)
+				rate: none
+			]
+		]
+		face/extra/redraw face
+		show face
 	]
