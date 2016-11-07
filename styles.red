@@ -27,6 +27,16 @@ scroller: image 12x370 draw []
 			]
 
 			redraw: function [face] [
+				if all [
+					face/parent
+					prev-face: find face/parent/pane face
+				] [
+					prev-face: first back prev-face
+					unless equal? prev-face/size/y face/size/y [
+						face/size/y: prev-face/size/y
+						show face
+					]
+				]
 				; compute knob position and size from DATA and RATIO values
 				area-size: face/size/y - (2 * face/extra/offset)
 				face/extra/knob-size: to integer! area-size * face/extra/ratio
