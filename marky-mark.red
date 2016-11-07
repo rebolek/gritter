@@ -139,6 +139,15 @@ marky-mark: func [
 		(emit ['bold value])
 	]
 
+	atx-heading-rule: [
+		copy value some [#"#"]
+		(append stack length? value)
+		some space
+		copy value to newline
+		skip
+		(emit [to word! rejoin ["h" take/last stack] value])
+	]
+
 	para-char-rule: [
 		char-rule (append text value)
 	]
@@ -169,6 +178,7 @@ marky-mark: func [
 		|	auto-link-rule
 		|	strong-rule
 		|	em-rule
+		|	atx-heading-rule
 		; additional rules
 		|	emoji-rule
 		; catch all rule
@@ -213,6 +223,8 @@ emit-rich: function [
 		|	'code set value string! (repend out ['font 'fonts/fixed value])
 		|	'nick set value string! (repend out ['font 'fonts/nick value])
 		|	'link set value string! (append stack value) set value url! (repend out ['link take/last stack value])
+		|	'h1 set value string! (repend out ['font 'fonts/h1 value])
+		|	'h2 set value string! (repend out ['font 'fonts/h2 value])
 		|	emoji-rule
 		]
 	]
