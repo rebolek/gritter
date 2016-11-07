@@ -6,14 +6,12 @@ Red [
 	License: {
 		Distributed under the Boost Software License, Version 1.0.
 	}
-	Date: "23-10-2016"
+	Date: "7-11-2016"
 	Note: {
 		Rich Text Dialect takes Lest source and converts it to Draw dialect
 		that can be supplied to Red/View.
 	}
-	To-Do: {
-		Links should be part of Rich Text Dialect.
-	}
+	To-Do: {}
 ]
 
 ; -----------
@@ -46,6 +44,7 @@ rich-text: function [
 				area/link: take/last stack
 			]
 			append areas area
+			append heights char-size/y
 			blocks: blocks + 1
 		]
 	]
@@ -55,11 +54,12 @@ rich-text: function [
 		out: tail out
 		while [not zero? blocks] [
 			if pair? out/1 [
-				out/1/y: y-pos + line-height - out/1/y ;+ font-offset
+				out/1/y: y-pos + line-height - heights/:blocks ;+ font-offset
 				blocks: blocks - 1
 			]
 			out: back out
 		]
+		clear heights
 		out: head out
 		; ---
 	]
@@ -105,7 +105,6 @@ rich-text: function [
 		]
 		append line word
 		emit-text
-		fix-height
 	]
 
 	out: make block! 2000
@@ -125,6 +124,8 @@ rich-text: function [
 	areas: make block! 50
 	area-type: none
 
+	heights: make block! 20
+
 	face: make face! [
 		font: fonts/text
 	]
@@ -136,6 +137,8 @@ rich-text: function [
 		face/font: font
 		font-offset: line-height - line-spacing - second size-text/with face "M"
 	]
+
+	; --- parse rules
 
 	font-rule: [
 		'font set value [word! | path!] 
@@ -173,5 +176,6 @@ rich-text: function [
 	]
 
 	parse dialect [some [font-rule | link-rule | text-rule]]
+	fix-height
 	either info [reduce [out as-pair width y-pos + line-height areas]] [out]
 ]
