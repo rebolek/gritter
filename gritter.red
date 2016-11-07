@@ -15,6 +15,7 @@ Red [
 ;		initialization
 ; ----------------------------------------------------------------------------
 
+do %fonts.red
 do %gitter-api.red
 do %rich-text.red
 do %marky-mark.red
@@ -75,8 +76,93 @@ unless value? 'rejoin [
 ]
 
 ; ----------------------------------------------------------------------------
+; 		ANIMATE subsystem
+; ----------------------------------------------------------------------------
+
+animate: function [
+	value ; action
+] [
+	rate: 30 ;  should be probably user-definable
+	anims: []		; block of running animations
+	actions: #(
+		fade: context [
+			init: function [action] [
+				; TODO: compute step and append it
+				; args: [face word target-value]
+				args: skip action 2
+				start: get in args/1 args/2
+				append args args/3 - start / action/1
+				action
+			]
+			run: function [args] [
+				; face: args/1 word: args/2 step: args/3
+				value: get in args/1 args/2
+				set in args/1 args/2 value + args/3
+			]
+			stop: function [args] [
+				; final-value: args/4
+				set in args/1 args/2	
+			]
+		]
+	)
+	; register new action when necessary
+	if value [
+		if integer? value/1 [
+			; value is in miliseconds
+			value/1: value/1 * 1.0 / 1000 + 0:0:0
+		]
+		append anims actions/(value/2)/init value
+	]
+	; process actions
+	foreach anim anims [
+		probe anim
+	]
+	anims
+]
+
+; ----------------------------------------------------------------------------
 ;		GUI
 ; ----------------------------------------------------------------------------
+
+; FIXME: when using FONT-NAME in definition, new font is not based on it!!!
+; TODO: word! and path! support for colors (font parent as lit- or get-word)
+
+clear fonts
+
+fonts/base: make font! [
+	name: "Segoe UI"
+	size: 10
+	color: 101.123.131 ; light: 131.148.150
+	style: []
+	anti-alias?: yes
+]
+
+; light
+make-fonts [
+	text: base 10 88.110.117
+	bold: text #bold
+	italic: text #italic
+	underline: #underline
+	link: #bold 38.139.210
+	active-link: link #underline
+	fixed: "Lucida Console" 42.161.152
+	nick: underline 181.137.0
+	emoji: "Segoe UI Symbol" 12 #bold 203.75.22
+]
+
+; dark
+make-fonts [
+	text: base 10 147.161.161
+	bold: text #bold
+	italic: text #italic
+	underline: #underline
+	link: #bold 38.139.210
+	active-link: link #underline
+	fixed: "Lucida Console" 42.161.152
+	nick: underline 181.137.0
+	emoji: "Segoe UI Symbol" 12 #bold 203.75.22
+]
+
 
 colors: context [
 ;	background: 253.246.227 ; light
