@@ -30,7 +30,7 @@ rich-text: function [
 	"Return Draw block created from Rich Text Dialect"
 	dialect "Rich Text Dialect input"
 	width "Width to wrap text at"
-	/info "Return block! with output as first item and info as others (currently SIZE)"
+	/info "Return block! with output as first item and info as others (currently SIZE and AREAS)"
 ] [
 	emit-text: func [/local text area] [
 		unless empty? line [
