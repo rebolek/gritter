@@ -6,7 +6,7 @@ Red [
 	License: {
 		Distributed under the Boost Software License, Version 1.0.
 	}
-	Date: "23-10-2016"
+	Date: "7-11-2016"
 	Note: {
 		This is very basic MarkDown parser just for use in the Red Gitter client.
 		It will be rewritten later based onRebol version of Marky-Mark.
@@ -143,8 +143,7 @@ marky-mark: func [
 		copy value some [#"#"]
 		(append stack length? value)
 		some space
-		copy value to newline
-		skip
+		copy value [to newline skip | to end]
 		(emit [to word! rejoin ["h" take/last stack] value])
 	]
 
@@ -201,6 +200,7 @@ emit-rich: function [
 	value: none
 	stack: make block! 20
 	out: make block! 2 * length? data
+	temp: none
 	emoji-rule: [
 		'emoji set value word! (
 			; TODO: improve this switch to support images also
@@ -215,6 +215,18 @@ emit-rich: function [
 			]
 		)
 	]
+	heading-rule: [
+		set value ['h1 | 'h2 | 'h3 | 'h4 | 'h5 | 'h6]
+		(append stack value)
+		set value string!
+		(
+			; TODO: TEMP can be removed once TO matrix works as expected
+			temp: 'fonts/temp
+			temp/2: take/last stack
+			repend out ['font copy temp value]
+		)
+	]
+
 	parse data [
 		some [
 			set value string! (repend out ['font 'fonts/text value])
@@ -223,8 +235,7 @@ emit-rich: function [
 		|	'code set value string! (repend out ['font 'fonts/fixed value])
 		|	'nick set value string! (repend out ['font 'fonts/nick value])
 		|	'link set value string! (append stack value) set value url! (repend out ['link take/last stack value])
-		|	'h1 set value string! (repend out ['font 'fonts/h1 value])
-		|	'h2 set value string! (repend out ['font 'fonts/h2 value])
+		|	heading-rule
 		|	emoji-rule
 		]
 	]
