@@ -43,6 +43,7 @@ marky-mark: func [
 	temp: []
 	temp-pos: temp
 	mark-stack: []
+	mark: none
 
 	select-command: func [mark] [
 		print ["select-command from" mark]
@@ -61,6 +62,16 @@ marky-mark: func [
 	]
 
 	; --- parse rules
+
+	line-start?: [
+		mark:
+		if (
+			any [
+				equal? mark head mark
+				equal? newline first back mark
+			]
+		)
+	]
 
 	mark-rule: [
 		(temp-pos: clear temp)
@@ -140,6 +151,7 @@ marky-mark: func [
 	]
 
 	atx-heading-rule: [
+		line-start?
 		copy value some [#"#"]
 		(append stack length? value)
 		some space
