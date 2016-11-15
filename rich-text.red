@@ -33,10 +33,10 @@ rich-text: function [
 	emit-text: func [/local text area] [
 		unless empty? line [
 			text: copy line
-			append out reduce ['text as-pair start-pos char-size/y text]
+			append out reduce ['text as-pair start-pos pos/y text]
 			area: make map! compose [
 				type: (area-type)
-				offset: (as-pair start-pos y-pos)
+				offset: (as-pair start-pos pos/y)
 				size: (size-text/with face text)
 				text: (text)
 			]
@@ -44,7 +44,7 @@ rich-text: function [
 				area/link: take/last stack
 			]
 			append areas area
-			append heights char-size/y
+			append heights word-size/y
 			blocks: blocks + 1
 		]
 	]
@@ -54,7 +54,7 @@ rich-text: function [
 		out: tail out
 		while [not zero? blocks] [
 			if pair? out/1 [
-				out/1/y: y-pos + line-height - heights/:blocks ;+ font-offset
+				out/1/y: pos/y + line-height - heights/:blocks ;+ font-offset
 				blocks: blocks - 1
 			]
 			out: back out
@@ -67,44 +67,53 @@ rich-text: function [
 	process-text: func [
 		text
 	] [
-		start-pos: x-pos
+		start-pos: pos/x
 		char-size: 0x0
 ;		print ["Process:" start-pos mold text]
 		clear line
 		clear word
-		foreach char text [
-			char-size: size-text/with face form char
-			if char-size/y > line-height [line-height: char-size/y]
-			x-pos: x-pos + char-size/x
+		while [not tail? text] [
+			; expand line
+			char: first text
+			; check cases
 			case [
-				whitespace? char (
+				; full word, needs check for wrapping
+				any [
+					whitespace? char
+					tail? next text
+				] (
 					append word char
-					either any [
-						x-pos > width
-						equal? newline char
+					size-word
+					; check if we need to wrap
+					if any [
+						pos/x > width 			; we are after the line, wrap
+						equal? newline char 	; newline wraps automatically
 					] [
-						if equal? newline char [append line head remove back tail copy word]
+						; do wrapping - emit line and move to next line
+						emit-text
+						fix-height
+						init-line
+						size-word
+					]
+					; append word to line
+					append line copy word
+					clear word
+					; if we are at the end of string, also emit line
+					if tail? next text [
 						emit-text
 						fix-height
 						clear line
-						start-pos: x-pos: 0
-						y-pos: y-pos + line-height
-						line-height: 0
-					] [
-						append line copy word
 					]
-					clear word
 				)
+				; tabulator is special case
 				equal? #"^-" char (
-					append word "    " ;tab-size
+					append word "    " 
 				)
-				true (
-					append word char
-				)
+				; ordinary character
+				true (append word char)
 			]
+			text: next text
 		]
-		append line word
-		emit-text
 	]
 
 	out: make block! 2000
@@ -113,6 +122,7 @@ rich-text: function [
 	stack: make block! 20
 	line-width: 0
 	start-pos: 0
+	pos: 0x0
 	x-pos: 0
 	y-pos: 0
 	blocks: 0
@@ -123,6 +133,10 @@ rich-text: function [
 	word: make string! 50
 	areas: make block! 50
 	area-type: none
+
+	para: context [
+		indent: 5x0 ; Y-pos is not used right now
+	]
 
 	heights: make block! 20
 
@@ -136,6 +150,27 @@ rich-text: function [
 		repend out ['font font]
 		face/font: font
 		font-offset: line-height - line-spacing - second size-text/with face "M"
+	]
+
+	init-para: func [] [
+		pos/x: para/indent
+		pos/y: pos/y + line-height
+		line-height: 0
+	]
+
+	init-line: func [] [
+		start-pos: 0
+		pos/x: 0
+		pos/y: probe pos/y + line-height
+		line-height: 0
+		clear line
+	]
+
+	size-word: func [] [
+		; get position after the word
+		word-size: size-text/with face word
+		pos/x: pos/x + word-size/x
+		if word-size/y > line-height [line-height: word-size/y]
 	]
 
 	; --- parse rules
@@ -177,5 +212,5 @@ rich-text: function [
 
 	parse dialect [some [font-rule | link-rule | text-rule]]
 	fix-height
-	either info [reduce [out as-pair width y-pos + line-height areas]] [out]
+	either info [reduce [out as-pair width pos/y + line-height areas]] [out]
 ]
