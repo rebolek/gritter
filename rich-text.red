@@ -88,18 +88,11 @@ rich-text: function [
 					unless equal? #"^/" char [append word char]
 					size-word
 					; check if we need to wrap
-					if any [
-						pos/x > width 			; we are after the line, wrap
-						equal? newline char 	; newline wraps automatically
-					] [
-						; do wrapping - emit line and move to next line
-						emit-text
-						fix-height
-						init-line
-						size-word
-					]
+					if pos/x > width do-wrap
 					; append word to line
 					append line copy word
+					; newline wraps automatically
+					if equal? newline char do-wrap
 					clear word
 					; if we are at the end of string, also emit line
 					if tail? next text [
@@ -178,6 +171,14 @@ rich-text: function [
 		; get position after the word
 		pos/x: pos/x + word-size/x
 		if word-size/y > line-height [line-height: word-size/y]
+	]
+
+	do-wrap: [
+		; do wrapping - emit line and move to next line
+		emit-text
+		fix-height
+		init-line
+		size-word
 	]
 
 	; --- parse rules
