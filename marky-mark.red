@@ -36,6 +36,7 @@ marky-mark: func [
 	alphanum: 		union digits letters
 	symbols: 		charset "@#$~&-/*%()[]{}=+<>,."
 	alphanumsym: 	union alphanum symbols
+	whitespace:		charset [#" " #"^-" #"^/"]
 	emoji-chars: 	charset [#"a" - #"z" #"0" - #"9" #"_"]
 
 	; ---
@@ -44,6 +45,7 @@ marky-mark: func [
 	temp-pos: temp
 	mark-stack: []
 	mark: none
+	symbol: none
 
 	select-command: func [mark] [
 		print ["select-command from" mark]
@@ -54,10 +56,21 @@ marky-mark: func [
 		]
 	]
 
+	trim-end: func [
+		"Remove trailing newline, if present"
+		series
+	] [
+		if equal? newline last series [
+			remove back tail series
+		]
+		series
+	]
+
 	emit: func [
 		value [block!]
 	] [
-		append out compose [(copy text) (reduce value)]
+		unless empty? text [append out text]
+		append out reduce value
 		clear text
 	]
 
@@ -71,6 +84,10 @@ marky-mark: func [
 				equal? newline first back mark
 			]
 		)
+	]
+
+	to-line-end: [
+		[to newline skip | to end]
 	]
 
 	mark-rule: [
@@ -140,13 +157,15 @@ marky-mark: func [
 		(emit ['nick value])
 	]
 
+	; FIXME: cannot contain other things yet
 	em-rule: [
-		#"*" copy value to #"*" skip 
+		#"*" not whitespace copy value to #"*" skip 
 		(emit ['italic value])
 	]
 
+	; FIXME: cannot contain other things yet
 	strong-rule: [
-		"**" copy value to "**" 2 skip 
+		"**" not whitespace copy value to "**" 2 skip 
 		(emit ['bold value])
 	]
 
@@ -155,8 +174,25 @@ marky-mark: func [
 		copy value some [#"#"]
 		(append stack length? value)
 		some space
-		copy value [to newline skip | to end]
+	;	copy value [to newline skip | to end]
+		copy value to-line-end
 		(emit [to word! rejoin ["h" take/last stack] value])
+	]
+
+	; FIXME: definitely not CommonMark compliant
+	list-rule: [
+		line-start?
+		set symbol #"*"
+		some space
+		copy value to-line-end
+		(emit ['ul 'li trim-end value])
+		any [
+			line-start?
+			symbol
+			some space
+			copy value to-line-end
+			(emit ['li trim-end value])
+		]
 	]
 
 	para-char-rule: [
@@ -183,6 +219,7 @@ marky-mark: func [
 		some [
 	;		mark-rule
 			nick-rule
+		|	list-rule
 		|	fenced-code-rule	
 		|	code-rule	
 		|	link-rule
