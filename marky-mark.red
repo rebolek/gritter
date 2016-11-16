@@ -69,7 +69,7 @@ marky-mark: func [
 	emit: func [
 		value [block!]
 	] [
-		unless empty? text [append out text]
+		unless empty? text [append out copy text]
 		append out reduce value
 		clear text
 	]
@@ -185,13 +185,13 @@ marky-mark: func [
 		set symbol #"*"
 		some space
 		copy value to-line-end
-		(emit ['ul 'li trim-end value])
+		(emit ['ul 'li copy trim-end value])
 		any [
 			line-start?
 			symbol
 			some space
 			copy value to-line-end
-			(emit ['li trim-end value])
+			(emit ['li copy trim-end value])
 		]
 	]
 
