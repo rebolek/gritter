@@ -148,7 +148,7 @@ rich-text: function [
 		font
 	] [
 		repend out ['font font]
-		face/font: probe font
+		face/font: font
 		font-offset: line-height - line-spacing - second size-text/with face "M"
 	]
 
@@ -161,7 +161,7 @@ rich-text: function [
 	init-line: func [] [
 		start-pos: 0
 		pos/x: 0
-		pos/y: probe pos/y + line-height
+		pos/y: pos/y + line-height
 		line-height: 0
 		clear line
 	]
