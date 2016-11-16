@@ -32,6 +32,12 @@ lest: function [
 			repend out ['newline 'font copy temp value 'newline]
 		)
 	]
+	list-rule: [
+		'ul
+		some [
+			'li set value text-rule (repend out ['newline 'bullet 'font 'fonts/text value 'newline])
+		]
+	]
 	text-rule: [string! | char!]
 
 	parse data [
@@ -44,6 +50,7 @@ lest: function [
 		|	'link set value text-rule (append stack value) set value url! (repend out ['link take/last stack value])
 		|	'newline (append out 'newline)
 		|	heading-rule
+		|	list-rule
 		|	emoji-rule
 		]
 	]
