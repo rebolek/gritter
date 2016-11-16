@@ -221,6 +221,12 @@ rich-text: function [
 		]
 		(init-para)
 	]
+	bullet-rule: [
+		'bullet (
+			append out compose/deep [push [pen black fill-pen 0.0.0 ellipse (pos + 3x6) 6x6]]
+			pos/x: pos/x + 15
+		)
+	]
 
 	image-rule: [
 		'image
@@ -233,7 +239,16 @@ rich-text: function [
 	]
 
 	init-para
-	parse dialect [some [font-rule | link-rule | text-rule | newline-rule | para-rule]]
+	parse dialect [
+		some [
+			font-rule
+		|	link-rule
+		|	text-rule
+		|	bullet-rule
+		|	newline-rule
+		|	para-rule
+		]
+	]
 	fix-height
 	either info [reduce [out as-pair width pos/y + line-height areas]] [out]
 ]
