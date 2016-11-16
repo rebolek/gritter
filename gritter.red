@@ -19,6 +19,7 @@ do %fonts.red
 do %gitter-api.red
 do %rich-text.red
 do %marky-mark.red
+do %lest.red
 
 system/view/auto-sync?: false
 
@@ -367,7 +368,7 @@ gritter: context [
 		unless width [size: 530]
 		out: copy []
 		foreach message messages [
-			body: rich-text/info emit-rich marky-mark message/text size
+			body: rich-text/info lest marky-mark message/text size
 			append out compose/deep [
 				base (colors/background) 600x20 draw [(draw-header message)]
 				return
