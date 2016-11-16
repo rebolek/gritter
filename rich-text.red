@@ -55,7 +55,7 @@ rich-text: function [
 		out: tail out
 		while [not zero? blocks] [
 			if pair? out/1 [
-				out/1/y: pos/y + line-height - heights/:blocks ;+ font-offset
+				out/1/y: pos/y + line-height - heights/:blocks
 				blocks: blocks - 1
 			]
 			out: back out
@@ -116,13 +116,9 @@ rich-text: function [
 	font: none
 	value: none
 	stack: make block! 20
-	line-width: 0
 	start-pos: 0
 	pos: 0x0
-	x-pos: 0
-	y-pos: 0
 	blocks: 0
-	font-offset: 0
 	line-height: 0
 	line-spacing: 3 ; FIXME: Hardcoded height
 	line: make string! 200
@@ -134,6 +130,7 @@ rich-text: function [
 		indent: 5x0 ; Y-pos is not used right now
 		origin: 5x5
 		margin: 5x5
+		tabs: none
 	]
 
 	heights: make block! 20
@@ -147,7 +144,6 @@ rich-text: function [
 	] [
 		repend out ['font font]
 		face/font: font
-		font-offset: line-height - line-spacing - second size-text/with face "M"
 	]
 
 	init-para: func [/first] [
@@ -167,9 +163,11 @@ rich-text: function [
 	size-word: func [] [
 		; FIXME: There is bug in Red, it sometimes ignores the font
 		;		once the name is set again, it works as expected
-		face/font/name: copy face/font/name
+		; NOTE: This bugfix throws some even stranger error:
+		; *** Script Error: path none is not valid for none! type
+		; *** Where: if
+		; face/font/name: copy face/font/name
 		word-size: size-text/with face word
-		; print ["size of" mold word word-size]
 		; get position after the word
 		pos/x: pos/x + word-size/x
 		if word-size/y > line-height [line-height: word-size/y]
@@ -218,6 +216,7 @@ rich-text: function [
 			'indent set value pair! (para/indent: value)
 		|	'origin set value pair! (para/origin: value)
 		|	'margin set value pair! (para/margin: value)
+		|	'tabs set value [integer! | block!] (para/tabs: value)
 		]
 		(init-para)
 	]
@@ -225,6 +224,17 @@ rich-text: function [
 		'bullet (
 			append out compose/deep [push [pen black fill-pen 0.0.0 ellipse (pos + 3x6) 6x6]]
 			pos/x: pos/x + 15
+		)
+	]
+	tab-rule: [
+		'tab (
+			switch type?/word para/tabs [
+				block!		[
+					tabs: para/tabs
+					forall tabs [if pos/x < tabs/1 [pos/x: tabs/1 break]]
+				]
+				integer!	[pos/x: pos/x / para/tabs + 1 * para/tabs]
+			]
 		)
 	]
 
@@ -246,6 +256,7 @@ rich-text: function [
 		|	text-rule
 		|	bullet-rule
 		|	newline-rule
+		|	tab-rule
 		|	para-rule
 		]
 	]
@@ -258,6 +269,12 @@ rich-text: function [
 rich: function [
 	value
 	width
+	/wide
 ] [
-	view layout compose/deep [image 253.246.227 (as-pair width width * 0.75) draw [(rich-text value width)]]
+	view layout compose/deep [
+		image 
+			253.246.227 
+			(as-pair width width * either wide [0.75] [1.66]) 
+			draw [(rich-text value width)]
+	]
 ]
