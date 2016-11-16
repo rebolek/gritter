@@ -148,7 +148,7 @@ rich-text: function [
 		font
 	] [
 		repend out ['font font]
-		face/font: font
+		face/font: probe font
 		font-offset: line-height - line-spacing - second size-text/with face "M"
 	]
 
@@ -167,8 +167,11 @@ rich-text: function [
 	]
 
 	size-word: func [] [
-		; get position after the word
+		; FIXME: There is bug in Red, it sometimes ignores the font
+		;		once the name is set again, it works as expected
+		face/font/name: copy face/font/name
 		word-size: size-text/with face word
+		; get position after the word
 		pos/x: pos/x + word-size/x
 		if word-size/y > line-height [line-height: word-size/y]
 	]
@@ -213,4 +216,13 @@ rich-text: function [
 	parse dialect [some [font-rule | link-rule | text-rule]]
 	fix-height
 	either info [reduce [out as-pair width pos/y + line-height areas]] [out]
+]
+
+; --- testing
+
+rich: function [
+	value
+	width
+] [
+	view layout compose/deep [base (as-pair width width * 0.75) draw [(rich-text value width)]]
 ]
