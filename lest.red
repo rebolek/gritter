@@ -41,6 +41,7 @@ lest: function [
 		|	'code set value string! (repend out ['font 'fonts/fixed value])
 		|	'nick set value string! (repend out ['font 'fonts/nick value])
 		|	'link set value string! (append stack value) set value url! (repend out ['link take/last stack value])
+		|	'newline (append out 'newline)
 		|	heading-rule
 		|	emoji-rule
 		]
