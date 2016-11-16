@@ -3,8 +3,9 @@ Red [
 ]
 
 do %fonts.red
-do %rich-text.red
 do %marky-mark.red
+do %lest.red
+do %rich-text.red
 
 clear fonts
 
@@ -28,10 +29,22 @@ make-fonts [
 	emoji: "Segoe UI Symbol" 12 #bold 203.75.22
 	h1: text 32 #bold
 	h2: text 28 #underline
+	h3: text 24 #bold
+	h4: text 20 #bold
+	h5: text 18 #bold
+	h6: text 16 #bold 147.161.161
 ]
 
+css: stylize load %styles.red
+
 view layout [
-	editor: area 300x200
-		on-key-up [display/draw: rich-text emit-rich marky-mark editor/text 400]
-	display: base 400x200 253.246.227
+	styles css
+	editor: area 400x500
+		on-key-up [
+			data: rich-text/info lest marky-mark editor/text 550
+			display/size/y: data/2/y
+			display/draw: data/1
+		]
+	panel [display: base 600x500 253.246.227]
+	scroller
 ]
