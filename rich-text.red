@@ -202,6 +202,10 @@ rich-text: function [
 			process-text take skip tail stack -2
 		)
 	]
+	newline-rule: [
+		'newline
+		(init-line)
+	]
 
 	image-rule: [
 		'image
@@ -213,7 +217,7 @@ rich-text: function [
 		)
 	]
 
-	parse dialect [some [font-rule | link-rule | text-rule]]
+	parse dialect [some [font-rule | link-rule | text-rule | newline-rule]]
 	fix-height
 	either info [reduce [out as-pair width pos/y + line-height areas]] [out]
 ]
