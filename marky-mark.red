@@ -9,7 +9,7 @@ Red [
 	Date: "7-11-2016"
 	Note: {
 		This is very basic MarkDown parser just for use in the Red Gitter client.
-		It will be rewritten later based onRebol version of Marky-Mark.
+		It will be rewritten later based on Rebol version of Marky-Mark.
 	}
 ]
 
