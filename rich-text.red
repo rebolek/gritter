@@ -51,6 +51,7 @@ rich-text: function [
 
 	fix-height: does [
 		; --- place blocks on Y-axis
+		; print ["fix-height to" line-height]
 		out: tail out
 		while [not zero? blocks] [
 			if pair? out/1 [
@@ -82,7 +83,9 @@ rich-text: function [
 					whitespace? char
 					tail? next text
 				] (
-					append word char
+					; append char if it’s not newline
+					; newline will mess up word size
+					unless equal? #"^/" char [append word char]
 					size-word
 					; check if we need to wrap
 					if any [
@@ -171,6 +174,7 @@ rich-text: function [
 		;		once the name is set again, it works as expected
 		face/font/name: copy face/font/name
 		word-size: size-text/with face word
+		; print ["size of" mold word word-size]
 		; get position after the word
 		pos/x: pos/x + word-size/x
 		if word-size/y > line-height [line-height: word-size/y]
@@ -228,5 +232,5 @@ rich: function [
 	value
 	width
 ] [
-	view layout compose/deep [base (as-pair width width * 0.75) draw [(rich-text value width)]]
+	view layout compose/deep [image 253.246.227 (as-pair width width * 0.75) draw [(rich-text value width)]]
 ]
