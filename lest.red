@@ -29,7 +29,7 @@ lest: function [
 			; TODO: TEMP can be removed once TO matrix works as expected
 			temp: 'fonts/temp
 			temp/2: take/last stack
-			repend out ['font copy temp value]
+			repend out ['font copy temp value 'newline]
 		)
 	]
 
