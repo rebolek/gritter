@@ -176,7 +176,7 @@ marky-mark: func [
 		some space
 	;	copy value [to newline skip | to end]
 		copy value to-line-end
-		(emit [to word! rejoin ["h" take/last stack] value])
+		(emit [to word! rejoin ["h" take/last stack] trim-end value])
 	]
 
 	; FIXME: definitely not CommonMark compliant
