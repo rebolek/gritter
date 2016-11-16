@@ -88,7 +88,7 @@ rich-text: function [
 					unless equal? #"^/" char [append word char]
 					size-word
 					; check if we need to wrap
-					if pos/x > width do-wrap
+					if pos/x > (width - para/margin/x) do-wrap
 					; append word to line
 					append line copy word
 					; newline wraps automatically
@@ -132,6 +132,8 @@ rich-text: function [
 
 	para: context [
 		indent: 5x0 ; Y-pos is not used right now
+		origin: 5x5
+		margin: 5x5
 	]
 
 	heights: make block! 20
@@ -148,15 +150,15 @@ rich-text: function [
 		font-offset: line-height - line-spacing - second size-text/with face "M"
 	]
 
-	init-para: func [] [
-		pos/x: para/indent
-		pos/y: pos/y + line-height
+	init-para: func [/first] [
+		pos/x: para/indent/x + para/origin/x
+		pos/y: para/origin/y + pos/y + line-height + either first [0] [para/indent/y]
 		line-height: 0
 	]
 
 	init-line: func [] [
-		start-pos: 0
-		pos/x: 0
+		pos/x: para/origin/x
+		start-pos: pos/x
 		pos/y: pos/y + line-height
 		line-height: 0
 		clear line
@@ -214,6 +216,8 @@ rich-text: function [
 	para-rule: [
 		'para any [
 			'indent set value pair! (para/indent: value)
+		|	'origin set value pair! (para/origin: value)
+		|	'margin set value pair! (para/margin: value)
 		]
 		(init-para)
 	]
