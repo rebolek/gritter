@@ -188,16 +188,16 @@ rich-text: function [
 		(set-font get value)
 	]
 	text-rule: [
-		set value string! 
+		set value [string! | char!]
 		(
 			area-type: 'area
-			process-text value
+			process-text form value
 		)
 	]
 	link-rule: [
 		'link 
-		set value string! 
-		(append stack value)
+		set value [string! | char!]
+		(append stack form value)
 		set value url!
 		(
 			append stack value
@@ -211,6 +211,12 @@ rich-text: function [
 		'newline
 		(init-line)
 	]
+	para-rule: [
+		'para any [
+			'indent set value pair! (para/indent: value)
+		]
+		(init-para)
+	]
 
 	image-rule: [
 		'image
@@ -222,7 +228,8 @@ rich-text: function [
 		)
 	]
 
-	parse dialect [some [font-rule | link-rule | text-rule | newline-rule]]
+	init-para
+	parse dialect [some [font-rule | link-rule | text-rule | newline-rule | para-rule]]
 	fix-height
 	either info [reduce [out as-pair width pos/y + line-height areas]] [out]
 ]
