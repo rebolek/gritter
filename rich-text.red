@@ -152,10 +152,13 @@ rich-text: function [
 		line-height: 0
 	]
 
-	init-line: func [] [
+	init-line: func [
+		/blank "Add blank line"
+	] [
 		pos/x: para/origin/x
 		start-pos: pos/x
 		pos/y: pos/y + line-height
+		if blank [pos/y + line-height]
 		line-height: 0
 		clear line
 	]
@@ -166,7 +169,8 @@ rich-text: function [
 		; NOTE: This bugfix throws some even stranger error:
 		; *** Script Error: path none is not valid for none! type
 		; *** Where: if
-		; face/font/name: copy face/font/name
+		; 	* but only in some cases. Hm
+		face/font/name: copy face/font/name
 		word-size: size-text/with face word
 		; get position after the word
 		pos/x: pos/x + word-size/x
@@ -209,11 +213,13 @@ rich-text: function [
 	]
 	newline-rule: [
 		'newline
-		(init-line)
+		(value: none)
+		opt [set value 'blank]
+		(either value [init-line/blank] [init-line])
 	]
 	para-rule: [
 		'para any [
-			'indent set value pair! (para/indent: value)
+			'indent set value [pair! | integer!] (either pair? value [para/indent: value] [para/indent/x: value])
 		|	'origin set value pair! (para/origin: value)
 		|	'margin set value pair! (para/margin: value)
 		|	'tabs set value [integer! | block!] (para/tabs: value)
