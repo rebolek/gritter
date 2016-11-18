@@ -11,7 +11,9 @@ Red [
 		Rich Text Dialect takes Lest source and converts it to Draw dialect
 		that can be supplied to Red/View.
 	}
-	To-Do: {}
+	To-Do: [
+		{Pass face! as WIDTH (rename) - will set DRAW facet directly.}
+	]
 ]
 
 ; -----------
@@ -239,7 +241,11 @@ rich-text: function [
 					tabs: para/tabs
 					forall tabs [if pos/x < tabs/1 [pos/x: tabs/1 break]]
 				]
-				integer!	[pos/x: pos/x / para/tabs + 1 * para/tabs]
+				integer!	[
+				;	prin pos/x
+					pos/x: pos/x / para/tabs + 1 * para/tabs
+				;	print [" " pos/x]
+				]
 			]
 		)
 	]
@@ -267,7 +273,14 @@ rich-text: function [
 		]
 	]
 	fix-height
-	either info [reduce [out as-pair width pos/y + line-height areas]] [out]
+	either info [
+;		reduce [out as-pair width pos/y + line-height areas]
+		make object! compose/deep [
+			data: [(out)]
+			size: (as-pair width pos/y + line-height)
+			areas: [(areas)]
+		]
+	] [out]
 ]
 
 ; --- testing
