@@ -7,6 +7,7 @@ do %rich-text.red
 helpr: func [
 	"Display helping informations about words and other values in GUI window"
 	'word 		[any-type!] "Word to display help for"
+	/only 		"Return draw dialect only and do not show window"
 	/local
 		out 	[string!]
 		spec 	[block!]
@@ -94,13 +95,22 @@ helpr: func [
 
 	f: i: none
 
-	view layout compose/deep [
-		below
-		f: field 500 (mold word)
-		i: image 
-			253.246.227 
-			(data/size) 
-			draw [(data/data)]
+	either only [
+		data/data
+	] [
+		view layout compose/deep [
+			below
+			f: field 500 (mold word) [
+				t: second face/parent/pane
+				w: load face/text
+				t/draw: helpr/only :w
+				show t
+			]
+			i: image 
+				253.246.227 
+				(data/size) 
+				draw [(data/data)]
+		]
 	]
 
 ]
