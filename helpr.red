@@ -7,104 +7,101 @@ do %rich-text.red
 helpr: func [
 	"Display helping informations about words and other values in GUI window"
 	'word 		[any-type!] "Word to display help for"
-	/only 		"Return draw dialect only and do not show window"
-	/local
-		out 	[string!]
-		spec 	[block!]
-		value
-		type
-		desc
-		help-string-rule 	[block!]
-		param-rule 			[block!]
-		refinement-rule 	[block!]
-		tabs 				[string!]
+	/only 		"Return RTD output only and do not show window"
 ] [
-	; --- vars
-	out: make string! 300
-	spec: spec-of get word
-	value: none
-	usage: make string! 80
-	description: make block! 5
-	args: make block! 20
-	refs: make block! 20
-	data: make block! 20
-	tabs: tab
-	; --- rules
-	help-string-rule: [
-		set value string! (
-			repend description [
-				'font 'fonts/text
-				rejoin [value #"."] 'newline
-				'font 'fonts/fixed mold word
-				'font 'fonts/text " is of type: "
-				'font 'fonts/bold mold type? get word 
-			]
-		)
+	draw-help: function [
+		'word
+	] [
+		; --- vars
+		out: make string! 300
+		spec: spec-of get word
+		value: none
+		usage: make string! 80
+		description: make block! 5
+		args: make block! 20
+		refs: make block! 20
+		data: make block! 20
+		tabs: tab
+		; --- rules
+		help-string-rule: [
+			set value string! (
+				repend description [
+					'font 'fonts/text
+					rejoin [value #"."] 'newline
+					'font 'fonts/fixed mold word
+					'font 'fonts/text " is of type: "
+					'font 'fonts/bold mold type? get word 
+				]
+			)
+		]
+		args-rule: [
+			set value [word! | lit-word! | get-word!]
+			opt [set type block!]
+			opt [(desc: none) set desc string!]
+			(
+				repend data ['font 'fonts/text mold value]
+				if desc [repend data ['tab 'font 'fonts/italic desc]]
+				repend data ['newline 'tab 'font 'fonts/fixed mold type]
+				append data 'newline 
+			)
+		]
+		refinement-rule: [
+			set value refinement!
+			opt [(desc: none) set desc string!]
+			(
+				append usage rejoin [mold value #" "]
+				repend data ['font 'fonts/text mold value tab 'font 'fonts/italic desc 'newline]
+				tabs: "^-^-"
+			)
+			any args-rule
+		]
+		; --- main code
+		append usage rejoin [word #" "]
+		parse spec [
+			opt help-string-rule
+			any args-rule
+			(args: copy data clear data)
+			any refinement-rule
+			(refs: data)
+		]
+	;	print mold description
+		data: rich-text/info compose [
+			para indent 5 origin 0x0
+			font fonts/h5 "Usage" newline
+			para indent 5 origin 0x0
+			font fonts/fixed 
+			para indent 0 origin 20x10
+			(usage)
+			para indent 5 origin 0x0
+			font fonts/h5 "Description" newline
+			para indent 0 origin 20x10
+			(description)
+			para indent 5 origin 0x0
+			font fonts/h5 "Arguments" newline
+			para indent 0 origin 20x10 tabs 40
+			(args)
+			para indent 5 origin 0x0
+			font fonts/h5 "Refinements" newline
+			para indent 0 origin 20x10 tabs 40
+			(refs)
+		] 500
 	]
-	args-rule: [
-		set value [word! | lit-word! | get-word!]
-		opt [set type block!]
-		opt [(desc: none) set desc string!]
-		(
-			repend data ['font 'fonts/text mold value]
-			if desc [repend data ['tab 'font 'fonts/italic desc]]
-			repend data ['newline 'tab 'font 'fonts/fixed mold type]
-			append data 'newline 
-		)
-	]
-	refinement-rule: [
-		set value refinement!
-		opt [(desc: none) set desc string!]
-		(
-			append usage rejoin [mold value #" "]
-			repend data ['font 'fonts/text mold value tab 'font 'fonts/italic desc 'newline]
-			tabs: "^-^-"
-		)
-		any args-rule
-	]
-	; --- main code
-	append usage rejoin [word #" "]
-	parse spec [
-		opt help-string-rule
-		any args-rule
-		(args: copy data clear data)
-		any refinement-rule
-		(refs: data)
-	]
-;	print mold description
-	data: rich-text/info compose [
-		para indent 5 origin 0x0
-		font fonts/h5 "Usage" newline
-		para indent 5 origin 0x0
-		font fonts/fixed 
-		para indent 0 origin 20x10
-		(usage)
-		para indent 5 origin 0x0
-		font fonts/h5 "Description" newline
-		para indent 0 origin 20x10
-		(description)
-		para indent 5 origin 0x0
-		font fonts/h5 "Arguments" newline
-		para indent 0 origin 20x10 tabs 40
-		(args)
-		para indent 5 origin 0x0
-		font fonts/h5 "Refinements" newline
-		para indent 0 origin 20x10 tabs 40
-		(refs)
-	] 500
-
 	f: i: none
-
+	data: draw-help :word
 	either only [
 		data/data
 	] [
 		view layout compose/deep [
 			below
 			f: field 500 (mold word) [
-				t: second face/parent/pane
 				w: load face/text
-				t/draw: helpr/only :w
-				show t
+				o: draw-help :w
+				diff: i/size - o/size
+				i/size: o/size
+				i/draw: o/data
+				p: face/parent
+			;	p/size: p/size - diff
+				show p
 			]
 			i: image 
 				253.246.227 
