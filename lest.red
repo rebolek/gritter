@@ -7,13 +7,21 @@ lest: function [
 	stack: make block! 20
 	out: make block! 2 * length? data
 	temp: none
+
+	; --- functions
+	emit: func [value] [
+		repend out value
+		value
+	]
+
+	; --- rules
 	emoji-rule: [
 		'emoji set value word! (
 			; TODO: improve this switch to support images also
 			;		move TYPE out somewhere to settings
 			type: 'plain-text ; unicode, image
 			get-emoji: func [values] [pick values index? find [plain-text unicode] type]
-			append out probe reduce [
+			emit [
 				'font 'fonts/emoji probe get-emoji probe switch value [
 					smile smiley 	[[":)" "😀"]]
 					disappointed 	[[":(" "😞"]]
@@ -29,30 +37,36 @@ lest: function [
 			; TODO: TEMP can be removed once TO matrix works as expected
 			temp: 'fonts/temp
 			temp/2: take/last stack
-			repend out ['newline 'font copy temp value 'newline]
+			emit ['newline 'font copy temp value 'newline]
 		)
 	]
 	list-rule: [
 		'ul
 		some [
-			'li set value text-rule (repend out ['newline 'bullet 'font 'fonts/text value 'newline])
+			'li set value text-rule (
+				emit ['newline 'bullet 'font 'fonts/text value 'newline]
+			)
 		]
 	]
 	text-rule: [string! | char!]
 
-	parse data [
+	rules: [
 		some [
-			set value text-rule (repend out ['font 'fonts/text value])
-		|	'bold set value text-rule (repend out ['font 'fonts/bold value])
-		|	'italic set value text-rule (repend out ['font 'fonts/italic value])
-		|	'code set value text-rule (repend out ['font 'fonts/fixed value])
-		|	'nick set value text-rule (repend out ['font 'fonts/nick value])
-		|	'link set value text-rule (append stack value) set value url! (repend out ['link take/last stack value])
-		|	'newline (append out 'newline)
+			set value text-rule (emit ['font 'fonts/text value])
+		|	'bold set value text-rule (emit ['font 'fonts/bold value])
+		|	'italic set value text-rule (emit ['font 'fonts/italic value])
+		|	'code set value text-rule (emit ['font 'fonts/fixed value])
+		|	'nick set value text-rule (emit ['font 'fonts/nick value])
+		|	'link set value text-rule (append stack value) set value url! (emit ['link take/last stack value])
+		|	'newline 'blank (emit ['newline 'blank])
+		|	'newline (emit ['newline])
 		|	heading-rule
 		|	list-rule
 		|	emoji-rule
 		]
 	]
+
+	; --- main
+	parse data rules
 	out
 ]
