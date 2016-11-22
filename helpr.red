@@ -102,7 +102,7 @@ helpr: func [
 		values: values-of value
 		out: make block! 30
 		length: min 20 length? values
-		append out draw-word-info/length symbol
+		append out draw-word-help/length symbol
 		append out [
 			"."
 			newline 
@@ -135,13 +135,52 @@ helpr: func [
 		out
 	]
 
+	draw-datatype-help: function [
+		symbol
+	] [
+		value: get symbol
+		out: make block! 50
+		append out draw-word-help symbol
+		words: collect [
+			foreach word sort words-of system/words [
+				if equal? type?/word get/any word symbol [keep word]
+			]
+		]
+		either empty? words [
+			append out [
+				newline
+				font fonts/text "No value of that type found in global space."
+			]
+		] [
+			length: length? words
+			append out compose [
+				newline
+				font fonts/text (rejoin ["There " either 1 = length ["is "] ["are "] length " value(s) of type "])
+				font fonts/fixed (mold symbol)
+				font fonts/text " in global space."
+				newline
+				para tabs [40 140]
+			]
+			length: min length 20
+			repeat i length [
+				append out compose [
+					tab
+					font fonts/fixed (mold words/:i)
+					tab
+					font fonts/text (mold get words/:i)
+					newline
+				]
+			]
+		]
+		probe out
+	]
+
 	draw-word-help: function [
 		symbol
 		/length
 		/index
 	] [
 		value: get symbol
-		out: make block! 30
 		compose [
 			para indent 5 origin 0x0
 			font fonts/fixed (mold symbol)
@@ -162,6 +201,7 @@ helpr: func [
 					font fonts/text
 				]
 			] [])
+			"."
 		]
 	]
 
@@ -169,17 +209,28 @@ helpr: func [
 		'word
 		width
 	] [
-		rich-text/info probe switch/default type?/word get :word [
+		unless value? :word [
+			return rich-text/info compose [
+				para indent 5 origin 0x0
+				font fonts/text "Word "
+				font fonts/fixed (mold :word)
+				font fonts/text " has no value."
+			] width
+		]
+		rich-text/info switch/default probe type?/word get :word [
 			function! action! op! native!	[draw-function-help :word]
 			object! map!					[probe draw-object-help :word]
 			block! hash!					[draw-word-help/length/index :word]
+			datatype! 						[draw-datatype-help :word]
 		] [draw-word-help :word] width
 	]
 
-	; ---
+	; --- main code
 
-	f: i: none
+	f: i: w: o: none
 	width: 500 ; TODO: user configurable?
+
+	print [mold :word value? :word] 
 
 	data: get-help :word width
 
@@ -191,7 +242,7 @@ helpr: func [
 			f: field 500 (mold word) [
 				print "ebter"
 				w: load face/text
-				o: probe get-help :w 500
+				o: get-help :w 500
 				diff: i/size - o/size
 				i/size: o/size
 				i/draw: o/data
