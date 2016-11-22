@@ -3,7 +3,7 @@ Red [
 ]
 
 do %fonts.red
-do %marky-mark.red
+do %import-md.red
 do %lest.red
 do %rich-text.red
 
@@ -41,9 +41,9 @@ view layout [
 	styles css
 	editor: area 400x500
 		on-key-up [
-			data: rich-text/info lest marky-mark editor/text 550
-			display/size/y: data/2/y
-			display/draw: data/1
+			data: rich-text/info probe lest probe import-md editor/text 550
+			display/size/y: data/size/y
+			display/draw: data/data
 		]
 	panel [display: base 600x500 253.246.227]
 	scroller
