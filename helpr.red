@@ -8,9 +8,14 @@ helpr: func [
 	"Display helping informations about words and other values in GUI window"
 	'word 		[any-type!] "Word to display help for"
 	/only 		"Return RTD output only and do not show window"
+	/local f i data
 ] [
-	draw-help: function [
+
+	; ---
+
+	draw-function-help: function [
 		'word
+		width
 	] [
 		; --- vars
 		out: make string! 300
@@ -64,8 +69,7 @@ helpr: func [
 			any refinement-rule
 			(refs: data)
 		]
-	;	print mold description
-		data: rich-text/info compose [
+		rich-text/info compose [
 			para indent 5 origin 0x0
 			font fonts/h5 "Usage" newline
 			para indent 5 origin 0x0
@@ -84,22 +88,101 @@ helpr: func [
 			font fonts/h5 "Refinements" newline
 			para indent 0 origin 20x10 tabs 40
 			(refs)
-		] 500
+		] width
 	]
+
+	draw-object-help: function [
+		"Return text description of an object"
+		symbol 			[word!]
+		width 			[integer!]
+	] [
+		; TODO: put various length limits to settings
+		;	and allow to change them with refinements
+		value: get symbol
+		words: words-of value
+		values: values-of value
+		out: make block! 30
+		tip: rejoin [
+			symbol " is " type? value " with " length? values " values." newline
+		]
+		length: min 20 length? values
+		probe tip
+		out: compose/deep [
+			para indent 5 origin 0x0
+			font fonts/fixed (mold symbol)
+			font fonts/text " is "
+			font fonts/fixed (mold type? value)
+			font fonts/text " with "
+			font fonts/bold (form length? values)
+			font fonts/text " values:"
+			newline
+			para tabs [40 140 240]
+		] 
+		repeat i length [
+			value: either object? value: values/:i [
+				mold words-of value
+			] [
+				trim/lines mold value
+			]
+			repend out [
+				'tab 
+				'font 'fonts/fixed 
+				mold words/:i ":" 
+
+				'tab
+				mold type? values/:i
+
+				'tab 
+				'font 'fonts/text 
+				copy/part value 30 
+				either 30 < length? value ["..."][""] 
+				'newline
+			]
+		]
+		if length < length? values [
+			append out [tab "..."]
+		]
+		rich-text/info probe out width
+	]
+
+	get-help: function [
+		'word
+		width
+	] [
+		switch/default type?/word get :word [
+			function! action! op! native!	[draw-function-help :word width]
+			object! map!					[draw-object-help :word width]
+		] [
+			rich-text/info probe compose/deep [
+				para indent 5 origin 0x0
+				font fonts/fixed (mold :word)
+				font fonts/text " is of type "
+				font fonts/fixed (mold type? get :word)
+			] width
+		]
+	]
+
+	; ---
+
 	f: i: none
-	data: draw-help :word
+	width: 500 ; TODO: user configurable?
+
+	data: get-help :word width
+
 	either only [
 		data/data
 	] [
 		view layout compose/deep [
 			below
 			f: field 500 (mold word) [
+				print "ebter"
 				w: load face/text
-				o: draw-help :w
+				o: probe get-help :w 500
 				diff: i/size - o/size
 				i/size: o/size
 				i/draw: o/data
 				p: face/parent
+				; FIXME: This crashes View on macOS
 			;	p/size: p/size - diff
 				show p
 			]
