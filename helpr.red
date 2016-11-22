@@ -15,8 +15,8 @@ helpr: func [
 
 	draw-function-help: function [
 		'word
-		width
 	] [
+		print "func help"
 		; --- vars
 		out: make string! 300
 		spec: spec-of get word
@@ -69,7 +69,7 @@ helpr: func [
 			any refinement-rule
 			(refs: data)
 		]
-		rich-text/info compose [
+		compose [
 			para indent 5 origin 0x0
 			font fonts/h5 "Usage" newline
 			para indent 5 origin 0x0
@@ -88,13 +88,12 @@ helpr: func [
 			font fonts/h5 "Refinements" newline
 			para indent 0 origin 20x10 tabs 40
 			(refs)
-		] width
+		]
 	]
 
 	draw-object-help: function [
 		"Return text description of an object"
 		symbol 			[word!]
-		width 			[integer!]
 	] [
 		; TODO: put various length limits to settings
 		;	and allow to change them with refinements
@@ -102,22 +101,13 @@ helpr: func [
 		words: words-of value
 		values: values-of value
 		out: make block! 30
-		tip: rejoin [
-			symbol " is " type? value " with " length? values " values." newline
-		]
 		length: min 20 length? values
-		probe tip
-		out: compose/deep [
-			para indent 5 origin 0x0
-			font fonts/fixed (mold symbol)
-			font fonts/text " is "
-			font fonts/fixed (mold type? value)
-			font fonts/text " with "
-			font fonts/bold (form length? values)
-			font fonts/text " values:"
-			newline
+		append out draw-word-info/length symbol
+		append out [
+			"."
+			newline 
 			para tabs [40 140 240]
-		] 
+		]
 		repeat i length [
 			value: either object? value: values/:i [
 				mold words-of value
@@ -142,24 +132,48 @@ helpr: func [
 		if length < length? values [
 			append out [tab "..."]
 		]
-		rich-text/info probe out width
+		out
+	]
+
+	draw-word-help: function [
+		symbol
+		/length
+		/index
+	] [
+		value: get symbol
+		out: make block! 30
+		compose [
+			para indent 5 origin 0x0
+			font fonts/fixed (mold symbol)
+			font fonts/text " is "
+			font fonts/fixed (mold type? value)
+			(either length [
+				length: length? either block? value [value] [words-of value]
+				compose [
+					font fonts/text " with "
+					font fonts/bold (form length)
+					font fonts/text " values"
+				]
+			] [])
+			(either index [
+				compose [
+					font fonts/text ", current index is "
+					font fonts/bold (form index? value)
+					font fonts/text
+				]
+			] [])
+		]
 	]
 
 	get-help: function [
 		'word
 		width
 	] [
-		switch/default type?/word get :word [
-			function! action! op! native!	[draw-function-help :word width]
-			object! map!					[draw-object-help :word width]
-		] [
-			rich-text/info probe compose/deep [
-				para indent 5 origin 0x0
-				font fonts/fixed (mold :word)
-				font fonts/text " is of type "
-				font fonts/fixed (mold type? get :word)
-			] width
-		]
+		rich-text/info probe switch/default type?/word get :word [
+			function! action! op! native!	[draw-function-help :word]
+			object! map!					[probe draw-object-help :word]
+			block! hash!					[draw-word-help/length/index :word]
+		] [draw-word-help :word] width
 	]
 
 	; ---
@@ -193,39 +207,6 @@ helpr: func [
 		]
 	]
 
-]
-
-describe-object: func [
-	"Return text description of an object"
-	symbol 			[word!]
-	/local
-		tip 		[string!]
-		length 		[integer!]
-		words 		[block!]
-		values 		[block!]
-] [
-	; TODO: put various length limits to settings
-	;	and allow to change them with refinements
-	value: get symbol
-	words: words-of value
-	values: values-of value
-	tip: rejoin [
-		symbol " is " type? value " with " length? values " values." newline
-	]
-	length: min 10 length? values
-	repeat i length [
-		value: trim/lines mold values/:i
-		append tip rejoin [
-			tab words/:i ":" 
-			tab copy/part value 15 
-			either 15 < length? value ["..."][""] 
-			newline
-		]
-	]
-	if length < length? values [
-		append tip "..."
-	]
-	tip
 ]
 
 get-calltip: func [
