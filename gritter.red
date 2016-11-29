@@ -33,18 +33,6 @@ either exists? %options.red [
 	token: to issue! ask "Please, type your Gitter token (you can get one at https://developer.gitter.im/apps):"
 ]
 
-inside-face?: function [
-	face
-	point
-] [
-	all [
-		point/x >= face/offset/x
-		point/x <= (face/offset/x + face/size/x)
-		point/y >= face/offset/y
-		point/y <= (face/offset/y + face/size/y)
-	]
-]
-
 average-color: function [
 	image
 ] [
