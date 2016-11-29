@@ -16,12 +16,26 @@ Red [
 	]
 ]
 
+do %fonts.red
+
 ; -----------
 
 whitespace?: function [
 	char
 ] [
 	find " ^/" char
+]
+
+inside-face?: function [
+	face
+	point
+] [
+	all [
+		point/x >= face/offset/x
+		point/x <= (face/offset/x + face/size/x)
+		point/y >= face/offset/y
+		point/y <= (face/offset/y + face/size/y)
+	]
 ]
 
 ; ----------------
@@ -260,6 +274,8 @@ rich-text: function [
 		)
 	]
 
+	; --- main code
+
 	init-para
 	parse dialect [
 		some [
@@ -274,11 +290,56 @@ rich-text: function [
 	]
 	fix-height
 	either info [
-;		reduce [out as-pair width pos/y + line-height areas]
 		make object! compose/deep [
-			data: [(out)]
-			size: (as-pair width pos/y + line-height)
-			areas: [(areas)]
+			data:	[(out)]
+			size:	(as-pair width pos/y + line-height)
+			areas:	[(areas)]
+			over:	[]
+			actors: context [
+				on-over: function [
+					face
+					event
+				] [
+					either face/extra/highlight [
+						unless inside-face? face/extra/highlight event/offset [
+							if pos: find face/draw fonts/active-link [
+								pos/1: fonts/link
+								face/extra/highlight: none
+								show face
+							]
+						]
+					] [
+						foreach area areas [
+							if all [
+								equal? 'link area/type
+								inside-face? area event/offset
+							] [
+								pos: find face/draw area/offset
+								if pos [
+									pos: back back pos
+									face/extra/highlight: area
+									pos/1: fonts/active-link
+									show face
+								]
+								break
+							]
+						]
+					] 					
+				]
+				on-up:	function [
+					face
+					event
+				] [
+					foreach area areas [
+						all [
+							equal? 'link area/type
+							inside-face? area event/offset
+							browse area/link
+							break
+						]
+					]
+				]
+			]
 		]
 	] [out]
 ]
@@ -296,4 +357,15 @@ rich: function [
 			(as-pair width width * either wide [0.75] [1.66]) 
 			draw [(rich-text value width)]
 	]
+]
+
+check-actors: does [
+	rt: rich-text/info ["text " link "asdfg" https://introducing.red " text"] 300
+	l: layout [t: image white 300x300 draw rt/data]
+	
+	t/actors: rt/actors
+	t/extra: object [highlight: none]
+	t/flags: [all-over]
+	
+	view l 
 ]
