@@ -210,6 +210,7 @@ rich-text: function [
 	text-rule: [
 		set value [string! | char!]
 		(
+			set-font fonts/text
 			area-type: 'area
 			process-text form value
 		)
