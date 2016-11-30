@@ -41,7 +41,7 @@ make-fonts: function [
 			(parent: 'base)
 			(clear styles)
 			set font set-word! 
-			opt [set parent word!]
+			opt [set parent get-word!]
 			(
 				parent-font: fonts/:parent
 				name: parent-font/name
