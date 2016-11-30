@@ -1,4 +1,33 @@
-Red []
+Red [
+	Title: "Fonts Dialect"
+	Author: "Boleslav Březovský"
+	File: %fonts.red
+	Rights: "Copyright (C) 2016 Boleslav Březovský. All rights reserved."
+	License: {
+		Distributed under the Boost Software License, Version 1.0.
+	}
+	Date: "30-11-2016"
+	Purpose: {
+# About
+
+Fonts Dialect provides simple way to define fonts for use in Red/View.
+
+# Usage
+
+```
+font-name: <parent-font> <name> <size> <color> <styles>
+```
+
+where
+
+* font-name - `[set-word!]` name of font to define
+* parent-font - `[get-word!]` name of parent font to inherit properties form
+* name - `[string!]` name of system font to use
+* size - `[integer!]` font size
+* color - `[tuple!]` font color
+* styles - `[issue!]` font style(s): bold, italic, underline
+	}
+]
 
 fonts: #()
 
