@@ -210,7 +210,7 @@ rich-text: function [
 	text-rule: [
 		set value [string! | char!]
 		(
-			set-font fonts/text
+		;	set-font fonts/text
 			area-type: 'area
 			process-text form value
 		)
@@ -226,6 +226,7 @@ rich-text: function [
 			area-type: 'link
 			; TODO:  penultimate: func [series] [skip tail series -2]
 			process-text take skip tail stack -2
+			set-font fonts/text
 		)
 	]
 	newline-rule: [
