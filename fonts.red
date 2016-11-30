@@ -7,7 +7,7 @@ Red [
 		Distributed under the Boost Software License, Version 1.0.
 	}
 	Date: "30-11-2016"
-	Purpose: {
+	Documentation: {
 # About
 
 Fonts Dialect provides simple way to define fonts for use in Red/View.
@@ -26,6 +26,9 @@ where
 * size - `[integer!]` font size
 * color - `[tuple!]` font color
 * styles - `[issue!]` font style(s): bold, italic, underline
+
+All font properties can be `word!` also, i.e. instead of 
+`red-font: :base 255.0.0` it is possible to write `red-font: :base red`.
 	}
 ]
 
@@ -36,6 +39,18 @@ make-fonts: function [
 ] [
 	font: none
 	styles: clear []
+	mark: none
+	get-word: [
+		mark:
+		change set value word! (probe get probe value)
+		:mark
+	]
+	properties: [
+		set name string!
+	|	set size integer!
+	|	set color tuple!
+	|	set style issue! (append styles load form style)
+	]
 	parse spec [
 		some [
 			(parent: 'base)
@@ -50,10 +65,8 @@ make-fonts: function [
 				styles: copy parent-font/style
 			)
 			any [
-				set name string!
-			|	set size integer!
-			|	set color tuple!
-			|	set style issue! (append styles load form style)	
+				opt get-word 
+				properties
 			]
 			(
 				fonts/:font: make fonts/:parent compose/deep [
