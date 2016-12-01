@@ -42,7 +42,7 @@ make-fonts: function [
 	mark: none
 	get-word: [
 		mark:
-		change set value word! (probe get probe value)
+		change set value [word! | path!] (probe get probe value)
 		:mark
 	]
 	properties: [
