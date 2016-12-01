@@ -6,7 +6,7 @@ Red [
 	License: {
 		Distributed under the Boost Software License, Version 1.0.
 	}
-	Date: "30-11-2016"
+	Date: "1-12-2016"
 	Documentation: {
 # About
 
@@ -80,9 +80,29 @@ make-fonts: function [
 	]
 ]
 
+; --- define colors
+solarized-palette: [
+	base03: 0.43.54
+	base02: 7.54.66
+	base01: 88.110.117
+	base00: 101.123.131
+	base0: 131.148.150
+	base1: 147.161.161
+	base2: 238.232.213
+	base3: 253.246.227
+	yellow: 181.137.0
+	orange: 203.75.22
+	red: 220.50.47
+	magenta: 211.54.130
+	violet: 108.113.196
+	blue: 38.139.210
+	cyan: 42.161.152
+	green: 133.153.0
+]
 
-; FIXME: when using FONT-NAME in definition, new font is not based on it!!!
-; TODO: word! and path! support for colors (font parent as lit- or get-word)
+colors: solarized-palette
+
+; --- init FONTS
 
 clear fonts
 
