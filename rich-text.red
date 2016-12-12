@@ -6,13 +6,13 @@ Red [
 	License: {
 		Distributed under the Boost Software License, Version 1.0.
 	}
-	Date: "7-11-2016"
+	Date: "2-12-2016"
 	Note: {
 		Rich Text Dialect takes Lest source and converts it to Draw dialect
 		that can be supplied to Red/View.
 	}
 	To-Do: [
-		{Pass face! as WIDTH (rename) - will set DRAW facet directly.}
+		"Fix height problem when code is first word on line"
 	]
 ]
 
@@ -41,10 +41,10 @@ inside-face?: function [
 ; ----------------
 
 rich-text: function [
-	"Return Draw block created from Rich Text Dialect"
-	dialect "Rich Text Dialect input"
-	width "Width to wrap text at"
-	/info "Return block! with output as first item and info as others (currently SIZE and AREAS)"
+	"Render Rich Text dialect to Draw block"
+	dialect [block!]			"Rich Text Dialect input"
+	with	[integer! object!]	"Face where to put Draw block in, or desired width"
+	/info "Return object! with rendered data and metada also"
 ] [
 	emit-text: func [/local text area] [
 		unless empty? line [
@@ -67,7 +67,6 @@ rich-text: function [
 
 	fix-height: does [
 		; --- place blocks on Y-axis
-		; print ["fix-height to" line-height]
 		out: tail out
 		while [not zero? blocks] [
 			if pair? out/1 [
@@ -113,7 +112,7 @@ rich-text: function [
 					; if we are at the end of string, also emit line
 					if tail? next text [
 						emit-text
-						fix-height
+					;	fix-height
 						clear line
 					]
 				)
@@ -126,33 +125,6 @@ rich-text: function [
 			]
 			text: next text
 		]
-	]
-
-	out: make block! 2000
-	font: none
-	value: none
-	stack: make block! 20
-	start-pos: 0
-	pos: 0x0
-	blocks: 0
-	line-height: 0
-	line-spacing: 3 ; FIXME: Hardcoded height
-	line: make string! 200
-	word: make string! 50
-	areas: make block! 50
-	area-type: none
-
-	para: context [
-		indent: 5x0 ; Y-pos is not used right now
-		origin: 5x5
-		margin: 5x5
-		tabs: none
-	]
-
-	heights: make block! 20
-
-	face: make face! [
-		font: fonts/text
 	]
 
 	set-font: func [
@@ -180,6 +152,7 @@ rich-text: function [
 	]
 
 	size-word: func [] [
+	;	print "size-word"
 		; FIXME: There is bug in Red, it sometimes ignores the font
 		;		once the name is set again, it works as expected
 		; NOTE: This bugfix throws some even stranger error:
@@ -193,12 +166,95 @@ rich-text: function [
 		if word-size/y > line-height [line-height: word-size/y]
 	]
 
+	make-info: does [
+		make object! compose/deep [
+			data:	[(out)]
+			size:	(as-pair width pos/y + line-height)
+			areas:	[(areas)]
+			over:	[]
+			actors: context [
+				on-over: function [
+					face
+					event
+				] [
+					either face/extra/highlight [
+						unless inside-face? face/extra/highlight event/offset [
+							if pos: find face/draw fonts/active-link [
+								pos/1: fonts/link
+								face/extra/highlight: none
+								show face
+							]
+						]
+					] [
+						foreach area areas [
+							if all [
+								equal? 'link area/type
+								inside-face? area event/offset
+							] [
+								pos: find face/draw area/offset
+								if pos [
+									pos: back back pos
+									face/extra/highlight: area
+									pos/1: fonts/active-link
+									show face
+								]
+								break
+							]
+						]
+					] 					
+				]
+				on-up:	function [
+					face
+					event
+				] [
+					foreach area areas [
+						all [
+							equal? 'link area/type
+							inside-face? area event/offset
+							browse area/link
+							break
+						]
+					]
+				]
+			]
+		]
+	]
+
 	do-wrap: [
 		; do wrapping - emit line and move to next line
 		emit-text
 		fix-height
 		init-line
 		size-word
+	]
+
+	; --- local vars
+
+	out: make block! 2000
+	font: none
+	value: none
+	stack: make block! 20
+	start-pos: 0
+	pos: 0x0
+	blocks: 0
+	line-height: 0
+	line-spacing: 3 ; FIXME: Hardcoded height
+	line: make string! 200
+	word: make string! 50
+	areas: make block! 50
+	area-type: none
+
+	para: context [
+		indent: 5x0 ; Y-pos is not used right now
+		origin: 5x5
+		margin: 5x5
+		tabs: none
+	]
+
+	heights: make block! 20
+
+	face: make face! [
+		font: fonts/text
 	]
 
 	; --- parse rules
@@ -258,14 +314,11 @@ rich-text: function [
 					forall tabs [if pos/x < tabs/1 [pos/x: tabs/1 break]]
 				]
 				integer!	[
-				;	prin pos/x
 					pos/x: pos/x / para/tabs + 1 * para/tabs
-				;	print [" " pos/x]
 				]
 			]
 		)
 	]
-
 	image-rule: [
 		'image
 		set value file!
@@ -277,6 +330,8 @@ rich-text: function [
 	]
 
 	; --- main code
+
+	width: either integer? with [with] [with/size/x]
 
 	init-para
 	parse dialect [
@@ -291,59 +346,14 @@ rich-text: function [
 		]
 	]
 	fix-height
-	either info [
-		make object! compose/deep [
-			data:	[(out)]
-			size:	(as-pair width pos/y + line-height)
-			areas:	[(areas)]
-			over:	[]
-			actors: context [
-				on-over: function [
-					face
-					event
-				] [
-					either face/extra/highlight [
-						unless inside-face? face/extra/highlight event/offset [
-							if pos: find face/draw fonts/active-link [
-								pos/1: fonts/link
-								face/extra/highlight: none
-								show face
-							]
-						]
-					] [
-						foreach area areas [
-							if all [
-								equal? 'link area/type
-								inside-face? area event/offset
-							] [
-								pos: find face/draw area/offset
-								if pos [
-									pos: back back pos
-									face/extra/highlight: area
-									pos/1: fonts/active-link
-									show face
-								]
-								break
-							]
-						]
-					] 					
-				]
-				on-up:	function [
-					face
-					event
-				] [
-					foreach area areas [
-						all [
-							equal? 'link area/type
-							inside-face? area event/offset
-							browse area/link
-							break
-						]
-					]
-				]
-			]
+	case [
+		object? with [
+			with/draw: out
+			with
 		]
-	] [out]
+		info [make-info]
+		true [out]
+	]
 ]
 
 ; --- testing
