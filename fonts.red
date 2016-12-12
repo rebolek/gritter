@@ -42,7 +42,7 @@ make-fonts: function [
 	mark: none
 	get-word: [
 		mark:
-		change set value [word! | path!] (probe get probe value)
+		change set value [word! | path!] (get value)
 		:mark
 	]
 	properties: [
@@ -106,36 +106,31 @@ colors: solarized-palette
 
 clear fonts
 
-fonts/base: make font! [
-	name: "Segoe UI"
-	size: 10
-	color: 101.123.131 ; light: 131.148.150
+fonts/base: make font! compose [
+	name: (either equal? "Windows" system/platform ["Segoe UI"] ["Helvetica Neue"])
+	size: 12
+	color: colors/base00
 	style: []
 	anti-alias?: yes
 ]
 
+; NOTE: background is base3 (light) or base03 (dark)
+
 ; light
 make-fonts [
-	text: :base 10 88.110.117
+	text: :base
 	bold: :text #bold
 	italic: :text #italic
 	underline: #underline
-	link: #bold 38.139.210
+	link: #bold colors/blue
 	active-link: :link #underline
-	fixed: "Lucida Console" 42.161.152
-	nick: :underline 181.137.0
-	emoji: "Segoe UI Symbol" 12 #bold 203.75.22
-]
-
-; dark
-make-fonts [
-	text: :base 10 147.161.161
-	bold: :text #bold
-	italic: :text #italic
-	underline: #underline
-	link: #bold 38.139.210
-	active-link: :link #underline
-	fixed: "Lucida Console" 42.161.152
-	nick: :underline 181.137.0
-	emoji: "Segoe UI Symbol" 12 #bold 203.75.22
+	fixed: "Lucida Console" colors/cyan
+	nick: :underline colors/green
+	emoji: "Segoe UI Symbol" 12 #bold colors/orange
+	h1: :text 32 #bold colors/base01
+	h2: :text 28 #underline colors/base01
+	h3: :h1 24
+	h4: :h1 20
+	h5: :h1 18
+	h6: :h1 16
 ]
