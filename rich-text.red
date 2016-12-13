@@ -70,6 +70,7 @@ rich-text: function [
 		out: tail out
 		while [not zero? blocks] [
 			if pair? out/1 [
+				print mold out/2
 				out/1/y: pos/y + line-height - heights/:blocks
 				blocks: blocks - 1
 			]
@@ -135,6 +136,7 @@ rich-text: function [
 	]
 
 	init-para: func [/first] [
+		fix-height
 		pos/x: para/indent/x + para/origin/x
 		pos/y: para/origin/y + pos/y + line-height + either first [0] [para/indent/y]
 		line-height: 0
@@ -289,7 +291,13 @@ rich-text: function [
 		'newline
 		(value: none)
 		opt [set value 'blank]
-		(either value [init-line/blank] [init-line])
+		(either value [
+			fix-height
+			init-line/blank
+		] [
+			fix-height
+			init-line
+		])
 	]
 	para-rule: [
 		'para any [
