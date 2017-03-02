@@ -90,10 +90,10 @@ json: context [
 				either zero? length? data [
 					append buffer #"}"
 				][
-					foreach [k v] data [
-						encode-into k buffer
+					foreach word words-of data [
+						encode-into word buffer
 						append buffer #":"
-						encode-into v buffer
+						encode-into data/:word buffer
 						append buffer #","
 					]
 					change back tail buffer #"}"

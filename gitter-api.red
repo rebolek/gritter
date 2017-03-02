@@ -21,32 +21,88 @@ bearer: function [token] [
 	rejoin ["Bearer " token]
 ]
 
+map: function [
+	"Make map with reduce/no-set emulation"
+	data
+] [
+	value: none
+	parse data [
+		some [
+			change set value set-word! (reduce ['quote value])
+		|	skip	
+		]
+	]
+	make map! reduce data
+]
+
+json-map: func [
+	"Return JSON object from specs"
+	data
+] [
+	json/encode map data
+]
 
 ; ----------------------------------------------------------------------------
 ;		gitter api
 ; ----------------------------------------------------------------------------
 
-
-; --- groups resource
-
-list-groups: does [
-	decode write/info rejoin [https://api.gitter.im/v1/groups] compose/deep [
-		GET [
+send-gitter: function [
+	data
+	"Send GET request to gitter API"
+	/post "Send POST request"
+		post-data
+	/put
+		put-data
+] [
+	type: case [
+		post ['POST]
+		put  ['PUT]
+		true ['GET]
+	]
+	; 
+	value: none
+	link: copy https://api.gitter.im/v1/
+	args-rule: [
+		'? (change back tail link #"?")
+		some [
+			set value set-word! (append link rejoin [form value #"="])
+			set value [word! | string! | integer!] (
+				if word? value [value: get :value]
+				append link rejoin [value #"&"]
+			)
+		]
+	]
+	parse probe append clear [] data [
+		some [
+			args-rule
+		|	set value [set-word! | file!] (append link probe dirize form value)
+		|	set value word! (append link dirize probe get :value)	
+		]
+	]
+	remove back tail link
+	header: compose/deep [
+		(type) [
 			Accept: "application/json"
 			Authorization: (bearer token)
 		]
 	]
+	if any [post put] [
+		insert last header [Content-Type: "application/json"]
+		append header any [post-data put-data]
+	]
+	decode write/info probe link probe header
+]
+
+; --- groups resource
+
+list-groups: does [
+	send-gitter %groups
 ]
 
 group-rooms: func [
 	group
 ] [
-	decode write/info rejoin [https://api.gitter.im/v1/groups/ group "/rooms"] compose/deep [
-		GET [
-			Accept: "application/json"
-			Authorization: (bearer token)
-		]
-	]
+	send-gitter [%groups group %rooms]
 ]
 
 ; --- rooms resource
@@ -54,39 +110,20 @@ group-rooms: func [
 user-rooms: function [
 	user
 ] [
-	decode write/info rejoin [https://api.gitter.im/v1/user/ user {/rooms}] compose/deep [
-		GET [
-			Accept: "application/json"
-			Authorization: (bearer token)
-		]
-	]
+	send-gitter [%user user %rooms]
 ]
 
 join-room: function [
 	room	
 ] [
-	write rejoin [https://api.gitter.im/v1/rooms] compose/deep [
-		POST [
-			Content-Type: "application/json" 
-			Accept: "application/json" 
-			Authorization: (bearer token)
-		]
-		(rejoin [{^{"uri":"} room {"^}}])
-	]
+	send-gitter/post %rooms json-map [uri: room]
 ]
 
 join-room-by-id: function [
 	user
 	room
 ] [
-	write rejoin [https://api.gitter.im/v1/user/ user "/rooms"] compose/deep [
-		POST [
-			Content-Type: "application/json" 
-			Accept: "application/json" 
-			Authorization: (bearer token)
-		]
-		(rejoin [{^{"id":"} room {"^}}])
-	]
+	send-gitter/post [%user user %rooms] json-map [id: room]
 ]
 
 remove-user: function [
@@ -100,14 +137,7 @@ update-topic: function [
 	room
 	topic
 ] [
-	write rejoin [https://api.gitter.im/v1/rooms/ room] compose/deep [
-		PUT [
-			Content-Type: "application/json" 
-			Accept: "application/json" 
-			Authorization: (bearer token)
-		]
-		(rejoin [{^{"topic":"} topic {"^}}])
-	]
+	send-gitter/put [%rooms room] json-map [topic: topic]
 ]
 
 room-tags: function [
@@ -117,14 +147,8 @@ room-tags: function [
 	unless block? tags [tags: reduce tags]
 	tags: collect [foreach tag tags [keep rejoin [form tag ", "]]]
 	remove/part back back tail tags 2
-	write rejoin [https://api.gitter.im/v1/rooms/ room] compose/deep [
-		PUT [
-			Content-Type: "application/json" 
-			Accept: "application/json" 
-			Authorization: (bearer token)
-		]
-		(rejoin [{^{"tags":"} tags {"^}}])
-	]
+;	send-gitter/put [%rooms room] json-map [tags: tags]
+	send-gitter/put [%rooms room] rejoin [{^{"tags":"} tags {"^}}]
 ]
 
 ; TODO: index room
@@ -138,52 +162,33 @@ remove-room: function [
 list-users: function [
 	room
 ] [
-	decode write/info rejoin [https://api.gitter.im/v1/rooms/ room {/users}] compose/deep [
-		GET [
-			Accept: "application/json"
-			Authorization: (bearer token)
-		]
-	]
+	send-gitter [%rooms room %users]
 ]
 
 ; --- messages resource
 
-get-messages: func [
+get-messages: function [
 	room
-	; TODO: skip, before-id, after-id, around-id, limit, search-query
+	/with "skip, beforeId, afterId, aroundId, limit, q (search query)"
+		values
 ] [
-	decode x: write/info rejoin [https://api.gitter.im/v1/rooms/ room {/chatMessages}] compose/deep [
-		GET [
-			Accept: "application/json"
-			Authorization: (bearer token)
-		]
-	]	
+	data: copy [%rooms room %chatMessages]
+	if with [append data compose [? (values)]]
+	send-gitter data
 ]
 
 get-message: function [
 	room
 	id
 ] [
-	decode write/info rejoin [https://api.gitter.im/v1/rooms/ room {/chatMessages/} id] compose/deep [
-		GET [
-			Accept: "application/json"
-			Authorization: (bearer token)
-		]
-	]	
+	send-gitter [%rooms room %chatMessages id]
 ]
 
 send-message: function [
 	room
 	text
 ] [
-	write rejoin [https://api.gitter.im/v1/rooms/ room "/chatMessages"] compose/deep [
-		POST [
-			Content-Type: "application/json" 
-			Accept: "application/json" 
-			Authorization: (bearer token)
-		]
-		(rejoin [{^{"text":"} text {"^}}])
-	]
+	send-gitter/post [%rooms room %chatMessages] json-map [text: text]
 ]
 
 update-message: function [
@@ -191,37 +196,18 @@ update-message: function [
 	text
 	id
 ] [
-	write rejoin [https://api.gitter.im/v1/rooms/ room "/chatMessages/" id] compose/deep [
-		POST [
-			Content-Type: "application/json" 
-			Accept: "application/json" 
-			Authorization: (bearer token)
-		]
-		(rejoin [{^{"text":"} text {"^}}])
-	]
+	send-gitter/post [%rooms room %chatMessages id] json-map [text: text]
 ]
 
 ; --- user resource
 
-user-info: does [
-	first decode write/info rejoin [https://api.gitter.im/v1/user] compose/deep [
-		GET [
-			Accept: "application/json"
-			Authorization: (bearer token)
-		]
-	]
-]
+user-info: does [first send-gitter %user]
 
 list-unread: function [
 	user
 	room
 ] [
-	decode write/info rejoin [https://api.gitter.im/v1/user/ user "/rooms/" room "/unreadItems"] compose/deep [
-		GET [
-			Accept: "application/json"
-			Authorization: (bearer token)
-		]
-	]
+	send-gitter [%user user %rooms room %unreadItems]
 ]
 
 mark-as-read: function [
@@ -233,45 +219,23 @@ mark-as-read: function [
 	messages: rejoin collect [foreach message messages [keep rejoin [form message {", "}]]]
 	insert messages {"}
 	remove/part back back back tail messages 3
-	write rejoin [https://api.gitter.im/v1/user/ user "/rooms/" room "/unreadItems/"] compose/deep [
-		POST [
-			Content-Type: "application/json" 
-			Accept: "application/json" 
-			Authorization: (bearer token)
-		]
-		(rejoin [{^{"chat":[} messages {]^}}])
-	]
+	send-gitter/post [%user user %rooms room %unreadItems] rejoin [{^{"chat":[} messages {]^}}]
 ]
 
 list-orgs: function [
 	user
 ] [
-	decode write/info rejoin [https://api.gitter.im/v1/user user "/orgs"] compose/deep [
-		GET [
-			Accept: "application/json"
-			Authorization: (bearer token)
-		]
-	]
+	send-gitter [%user user %orgs]
 ]
 
 list-repos: function [
 	user
 ] [
-	decode write/info rejoin [https://api.gitter.im/v1/user user "/repos"] compose/deep [
-		GET [
-			Accept: "application/json"
-			Authorization: (bearer token)
-		]
-	]
+	send-gitter [%user user %repos]
 ]
 
 list-channels: function [
 	user
 ] [
-	decode write/info rejoin [https://api.gitter.im/v1/user user "/repos"] compose/deep [
-		GET [
-			Accept: "application/json"
-			Authorization: (bearer token)
-		]
-	]
+	; TODO
 ]
