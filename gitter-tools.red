@@ -48,7 +48,7 @@ get-all-messages: func [
 		insert messages ret
 		save %messages.red messages
 		unless empty? ret [
-			print ret/1/sent
+		;	print ret/1/sent
 			last-id: ret/1/id
 		]
 		empty? ret
@@ -60,7 +60,7 @@ download-all-messages: function [
 	room
 	/only "Remove some unnecessary fields"
 ] [
-	ret: probe get-messages room
+	ret: get-messages room
 	last-id: ret/1/id
 	write %messages.red mold reverse ret
 	until [
@@ -76,7 +76,7 @@ download-all-messages: function [
 		]
 		; --- 
 		unless empty? ret [
-			print ret/1/sent
+		;	print ret/1/sent
 			last-id: ret/1/id
 			write/append %messages.red mold reverse ret
 		]

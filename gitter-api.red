@@ -72,11 +72,11 @@ send-gitter: function [
 			)
 		]
 	]
-	parse probe append clear [] data [
+	parse append clear [] data [
 		some [
 			args-rule
-		|	set value [set-word! | file!] (append link probe dirize form value)
-		|	set value word! (append link dirize probe get :value)	
+		|	set value [set-word! | file!] (append link dirize form value)
+		|	set value word! (append link dirize get :value)	
 		]
 	]
 	remove back tail link
@@ -90,7 +90,7 @@ send-gitter: function [
 		insert last header [Content-Type: "application/json"]
 		append header any [post-data put-data]
 	]
-	decode write/info probe link probe header
+	decode write/info link header
 ]
 
 ; --- groups resource
