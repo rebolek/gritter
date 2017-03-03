@@ -2,6 +2,13 @@ Red []
 
 do %gitter-api.red
 
+init-gitter: does [
+	do %options.red
+	user: user-info
+	rooms: user-rooms user/id
+	room: select-room rooms "red/red" ; Remove later
+]
+
 select-room: function [
 	"Selects room by its name. Returns room ID."
 	rooms "Block of rooms"
@@ -37,7 +44,6 @@ get-all-messages: func [
 	last-id: ret/1/id
 	insert messages ret
 	until [
-	;	ret: get-messages/before room last-id
 		ret: get-messages/with room [beforeId: last-id]
 		insert messages ret
 		save %messages.red messages
@@ -52,12 +58,23 @@ get-all-messages: func [
 
 download-all-messages: function [
 	room
+	/only "Remove some unnecessary fields"
 ] [
-	ret: get-messages room
+	ret: probe get-messages room
 	last-id: ret/1/id
 	write %messages.red mold reverse ret
 	until [
 		ret: get-messages/with room [beforeId: last-id]
+		; --- TODO: move to separate function STRIP-MESSAGE or something like that
+		if only [
+			forall ret [
+				message: ret/1
+				message/html: none
+				message/author: message/fromUser/id
+				message/fromUser: none
+			]
+		]
+		; --- 
 		unless empty? ret [
 			print ret/1/sent
 			last-id: ret/1/id
