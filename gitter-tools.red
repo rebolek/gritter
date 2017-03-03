@@ -62,7 +62,7 @@ download-all-messages: function [
 ] [
 	ret: get-messages room
 	last-id: ret/1/id
-	write %messages.red mold reverse ret
+	write %messages.red mold/only reverse ret
 	until [
 		ret: get-messages/with room [beforeId: last-id]
 		; --- TODO: move to separate function STRIP-MESSAGE or something like that
@@ -78,7 +78,7 @@ download-all-messages: function [
 		unless empty? ret [
 		;	print ret/1/sent
 			last-id: ret/1/id
-			write/append %messages.red mold reverse ret
+			write/append %messages.red mold/only reverse ret
 		]
 		empty? ret
 	]
