@@ -88,7 +88,7 @@ send-gitter: function [
 	]
 	if any [post put] [
 		insert last header [Content-Type: "application/json"]
-		append header any [post-data put-data]
+		append header json-map any [post-data put-data]
 	]
 	decode write/info link header
 ]
@@ -116,16 +116,16 @@ user-rooms: function [
 get-room-id: function [
 	room
 ] [
-	send-gitter/post %rooms json-map [uri: room]
+	send-gitter/post %rooms [uri: room]
 ]
 
 join-room: function [
 	user
 	room
-	/by-id "Room arg is id instead of name"
+;	/by-id "Room arg is id instead of name"
 ] [
-	unless by-id [room: get-room-id room]
-	send-gitter/post [%user user %rooms] json-map [id: room]
+;	unless by-id [room: get-room-id room]
+	send-gitter/post [%user user %rooms] [id: room]
 ]
 
 remove-user: function [
@@ -135,22 +135,24 @@ remove-user: function [
 	; TODO: needs DELETE method
 ]
 
+; TODO: needs PUT method
 update-topic: function [
 	room
 	topic
 ] [
-	send-gitter/put [%rooms room] json-map [topic: topic]
+	send-gitter/put [%rooms room] [topic: topic]
 ]
 
+; TODO: needs PUT method
 room-tags: function [
 	room
 	tags [string! issue! block!]
 ] [
 	unless block? tags [tags: reduce tags]
-	tags: collect [foreach tag tags [keep rejoin [form tag ", "]]]
-	remove/part back back tail tags 2
-;	send-gitter/put [%rooms room] json-map [tags: tags]
-	send-gitter/put [%rooms room] rejoin [{^{"tags":"} tags {"^}}]
+;	tags: collect [foreach tag tags [keep rejoin [form tag ", "]]]
+;	remove/part back back tail tags 2
+;	send-gitter/put [%rooms room] rejoin [{^{"tags":"} tags {"^}}]
+	send-gitter/put [%rooms room] json-map [tags: tags]
 ]
 
 ; TODO: index room
@@ -190,7 +192,7 @@ send-message: function [
 	room
 	text
 ] [
-	send-gitter/post [%rooms room %chatMessages] json-map [text: text]
+	send-gitter/post [%rooms room %chatMessages] [text: text]
 ]
 
 update-message: function [
@@ -198,7 +200,7 @@ update-message: function [
 	text
 	id
 ] [
-	send-gitter/post [%rooms room %chatMessages id] json-map [text: text]
+	send-gitter/post [%rooms room %chatMessages id] [text: text]
 ]
 
 ; --- user resource
@@ -218,10 +220,11 @@ mark-as-read: function [
 	messages [string! issue! block!]
 ] [
 	unless block? messages [messages: reduce messages]
-	messages: rejoin collect [foreach message messages [keep rejoin [form message {", "}]]]
-	insert messages {"}
-	remove/part back back back tail messages 3
-	send-gitter/post [%user user %rooms room %unreadItems] rejoin [{^{"chat":[} messages {]^}}]
+;	messages: rejoin collect [foreach message messages [keep rejoin [form message {", "}]]]
+;	insert messages {"}
+;	remove/part back back back tail messages 3
+;	send-gitter/post [%user user %rooms room %unreadItems] rejoin [{^{"chat":[} messages {]^}}]
+	send-gitter/post [%user user %rooms room %unreadItems] [chat: messages]
 ]
 
 list-orgs: function [
