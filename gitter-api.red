@@ -113,16 +113,18 @@ user-rooms: function [
 	send-gitter [%user user %rooms]
 ]
 
-join-room: function [
-	room	
+get-room-id: function [
+	room
 ] [
 	send-gitter/post %rooms json-map [uri: room]
 ]
 
-join-room-by-id: function [
+join-room: function [
 	user
 	room
+	/by-id "Room arg is id instead of name"
 ] [
+	unless by-id [room: get-room-id room]
 	send-gitter/post [%user user %rooms] json-map [id: room]
 ]
 
