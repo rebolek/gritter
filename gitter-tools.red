@@ -84,6 +84,55 @@ download-all-messages: function [
 	]
 ]
 
+select-message: function [
+	"Select message by id"
+	messages
+	id
+] [
+	foreach message messages [
+		if equal? id message/id [return message]
+	]
+	none
+]
+
+; --- searching
+
+match-question: function [
+	"Return LOGIC! value indicating wether message contains question mark."
+	message
+] [
+	not not find message #"?"
+]
+
+get-code: function [
+	"Returns block of code snippets or NONE"
+	message
+] [
+	code: make block! 4
+	fence: "```"
+	parse message/text [
+		some [
+			thru fence
+			copy value
+			to fence
+			3 skip
+			(append code value)
+		]
+	]
+	either empty? code [none] [code]
+]
+
+get-all-code: function [
+	messages
+] [
+	code: make map! []
+	foreach message messages [
+		code/(message/id): get-code message
+	]
+	code
+]
+
+; ---
 
 stats: function [
 	messages
