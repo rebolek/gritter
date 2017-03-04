@@ -56,25 +56,32 @@ get-all-messages: func [
 	ret
 ]
 
+strip-message: function [
+	"Remove unnecessary informations from message"
+	message
+] [
+	message/html: none
+	message/author: message/fromUser/id
+	message/fromUser: none
+	message/mentions: none
+	message/urls: none
+	message/issues: none
+	message/unread: none
+	message/readBy: none
+	message/meta: none
+]
+
 download-all-messages: function [
 	room
 	/only "Remove some unnecessary fields"
 ] [
 	ret: get-messages room
+	if only [foreach message ret [strip-message message]]
 	last-id: ret/1/id
 	write %messages.red mold/only reverse ret
 	until [
 		ret: get-messages/with room [beforeId: last-id]
-		; --- TODO: move to separate function STRIP-MESSAGE or something like that
-		if only [
-			forall ret [
-				message: ret/1
-				message/html: none
-				message/author: message/fromUser/id
-				message/fromUser: none
-			]
-		]
-		; --- 
+		if only [foreach message ret [strip-message message]]
 		unless empty? ret [
 		;	print ret/1/sent
 			last-id: ret/1/id
