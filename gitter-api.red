@@ -90,7 +90,7 @@ send-gitter: function [
 		insert last header [Content-Type: "application/json"]
 		append header any [post-data put-data]
 	]
-	decode write/info link header
+	decode write/info probe link probe header
 ]
 
 ; --- groups resource
