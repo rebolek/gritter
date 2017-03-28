@@ -1,7 +1,7 @@
 Red [
     Title: "JSON parser"
     File: %json.red
-    Author: "Nenad Rakocevic, Qingtian Xie"
+    Author: "Nenad Rakocevic, Qingtian Xie, Boleslav Březovský"
     License: "BSD-3 - https://github.com/red/red/blob/master/BSD-3-License.txt"
 ]
 
@@ -16,6 +16,15 @@ json: context [
 	ws:			 [any blank]
 	dbl-quote:	 #"^""
 	s: e:		 none
+
+	load-str: func [
+		"Return word if possible, leave untouched when not" 
+		str
+		/local out 
+	] [
+		if block? try [out: load str] [out: str]
+		out
+	]
 
 	decode-str: func [start end /local new rule s][
 		new: copy/part start back end					;-- exclude ending quote
@@ -70,7 +79,7 @@ json: context [
 	
 	string: [dbl-quote s: any [#"\" [quoted-char | #"u" 4 hexa] | dbl-quote break | skip] e:]
 	
-	couple: [ws string keep (load decode-str s e) ws #":" ws value]
+	couple: [ws string keep (load-str decode-str s e) ws #":" ws value]
 	
 	object-rule: [
 		#"{" collect set list opt [any [couple #","] couple] ws #"}"
