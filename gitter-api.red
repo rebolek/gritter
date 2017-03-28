@@ -15,6 +15,21 @@ do %json.red
 
 gitter: context [
 
+any-map?: func [
+	"Return TRUE if VALUE is MAP! or OBJECT!"
+	value
+] [
+	any [map? value object? value]
+]
+
+get-id: func [
+	"Return ID from user or room object/map or pass ID"
+	data
+] [
+	if any-map? data [data: data/id]
+	data
+]
+
 decode: function [data] [
 	first json/decode third data
 ]
@@ -78,7 +93,7 @@ send: function [
 		some [
 			args-rule
 		|	set value [set-word! | file!] (append link dirize form value)
-		|	set value word! (append link dirize get :value)	
+		|	set value word! (append link dirize form get :value)	
 		]
 	]
 	remove back tail link
@@ -112,21 +127,23 @@ group-rooms: func [
 user-rooms: function [
 	user
 ] [
+	user: get-id user
 	send [%user user %rooms]
 ]
 
-get-room-id: function [
+get-room-info: function [
 	room
 ] [
 	send/post %rooms [uri: room]
 ]
 
 join-room: function [
-	user
-	room
-;	/by-id "Room arg is id instead of name"
+	user 
+	room ""
+	/by-id "Room arg is id instead of name"
 ] [
-;	unless by-id [room: get-room-id room]
+	user: get-id user
+	unless by-id [room: select get-room-info room 'id]
 	send/post [%user user %rooms] [id: room]
 ]
 
@@ -209,10 +226,13 @@ update-message: function [
 
 user-info: does [first send %user]
 
+; TODO: make part of get-messages?
 list-unread: function [
 	user
 	room
 ] [
+	user: get-id user
+	room: get-id room
 	send [%user user %rooms room %unreadItems]
 ]
 
@@ -221,6 +241,7 @@ mark-as-read: function [
 	room
 	messages [string! issue! block!]
 ] [
+	user: get-id user
 	unless block? messages [messages: reduce messages]
 ;	messages: rejoin collect [foreach message messages [keep rejoin [form message {", "}]]]
 ;	insert messages {"}
@@ -232,18 +253,21 @@ mark-as-read: function [
 list-orgs: function [
 	user
 ] [
+	user: get-id user
 	send [%user user %orgs]
 ]
 
 list-repos: function [
 	user
 ] [
+	user: get-id user
 	send [%user user %repos]
 ]
 
 list-channels: function [
 	user
 ] [
+	user: get-id user
 	; TODO
 ]
 
