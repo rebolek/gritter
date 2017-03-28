@@ -4,8 +4,8 @@ do %gitter-api.red
 
 init-gitter: does [
 	do %options.red
-	user: user-info
-	rooms: user-rooms user/id
+	user: gitter/user-info
+	rooms: gitter/user-rooms user/id
 	room: select-room rooms "red/red" ; Remove later
 ]
 
@@ -39,12 +39,12 @@ get-all-messages: func [
 		ret: messages
 	] [
 		messages: make block! 10'000
-		ret: get-messages room
+		ret: gitter/get-messages room
 	]
 	last-id: ret/1/id
 	insert messages ret
 	until [
-		ret: get-messages/with room [beforeId: last-id]
+		ret: gitter/get-messages/with room [beforeId: last-id]
 		insert messages ret
 		save %messages.red messages
 		unless empty? ret [
@@ -75,12 +75,12 @@ download-all-messages: function [
 	room
 	/only "Remove some unnecessary fields"
 ] [
-	ret: get-messages room
+	ret: gitter/get-messages room
 	if only [foreach message ret [strip-message message]]
 	last-id: ret/1/id
 	write %messages.red mold/only reverse ret
 	until [
-		ret: get-messages/with room [beforeId: last-id]
+		ret: gitter/get-messages/with room [beforeId: last-id]
 		if only [foreach message ret [strip-message message]]
 		unless empty? ret [
 		;	print ret/1/sent

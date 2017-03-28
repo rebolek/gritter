@@ -13,6 +13,8 @@ Red [
 
 do %json.red
 
+gitter: context [
+
 decode: function [data] [
 	first json/decode third data
 ]
@@ -46,7 +48,7 @@ json-map: func [
 ;		gitter api
 ; ----------------------------------------------------------------------------
 
-send-gitter: function [
+send: function [
 	data
 	"Send GET request to gitter API"
 	/post "Send POST request"
@@ -96,13 +98,13 @@ send-gitter: function [
 ; --- groups resource
 
 list-groups: does [
-	send-gitter %groups
+	send %groups
 ]
 
 group-rooms: func [
 	group
 ] [
-	send-gitter [%groups group %rooms]
+	send [%groups group %rooms]
 ]
 
 ; --- rooms resource
@@ -110,13 +112,13 @@ group-rooms: func [
 user-rooms: function [
 	user
 ] [
-	send-gitter [%user user %rooms]
+	send [%user user %rooms]
 ]
 
 get-room-id: function [
 	room
 ] [
-	send-gitter/post %rooms [uri: room]
+	send/post %rooms [uri: room]
 ]
 
 join-room: function [
@@ -125,7 +127,7 @@ join-room: function [
 ;	/by-id "Room arg is id instead of name"
 ] [
 ;	unless by-id [room: get-room-id room]
-	send-gitter/post [%user user %rooms] [id: room]
+	send/post [%user user %rooms] [id: room]
 ]
 
 remove-user: function [
@@ -140,7 +142,7 @@ update-topic: function [
 	room
 	topic
 ] [
-	send-gitter/put [%rooms room] [topic: topic]
+	send/put [%rooms room] [topic: topic]
 ]
 
 ; TODO: needs PUT method
@@ -151,8 +153,8 @@ room-tags: function [
 	unless block? tags [tags: reduce tags]
 ;	tags: collect [foreach tag tags [keep rejoin [form tag ", "]]]
 ;	remove/part back back tail tags 2
-;	send-gitter/put [%rooms room] rejoin [{^{"tags":"} tags {"^}}]
-	send-gitter/put [%rooms room] json-map [tags: tags]
+;	send/put [%rooms room] rejoin [{^{"tags":"} tags {"^}}]
+	send/put [%rooms room] json-map [tags: tags]
 ]
 
 ; TODO: index room
@@ -166,7 +168,7 @@ remove-room: function [
 list-users: function [
 	room
 ] [
-	send-gitter [%rooms room %users]
+	send [%rooms room %users]
 ]
 
 ; --- messages resource
@@ -178,21 +180,21 @@ get-messages: function [
 ] [
 	data: copy [%rooms room %chatMessages]
 	if with [append data compose [? (values)]]
-	send-gitter data
+	send data
 ]
 
 get-message: function [
 	room
 	id
 ] [
-	send-gitter [%rooms room %chatMessages id]
+	send [%rooms room %chatMessages id]
 ]
 
 send-message: function [
 	room
 	text
 ] [
-	send-gitter/post [%rooms room %chatMessages] [text: text]
+	send/post [%rooms room %chatMessages] [text: text]
 ]
 
 update-message: function [
@@ -200,18 +202,18 @@ update-message: function [
 	text
 	id
 ] [
-	send-gitter/post [%rooms room %chatMessages id] [text: text]
+	send/post [%rooms room %chatMessages id] [text: text]
 ]
 
 ; --- user resource
 
-user-info: does [first send-gitter %user]
+user-info: does [first send %user]
 
 list-unread: function [
 	user
 	room
 ] [
-	send-gitter [%user user %rooms room %unreadItems]
+	send [%user user %rooms room %unreadItems]
 ]
 
 mark-as-read: function [
@@ -223,24 +225,28 @@ mark-as-read: function [
 ;	messages: rejoin collect [foreach message messages [keep rejoin [form message {", "}]]]
 ;	insert messages {"}
 ;	remove/part back back back tail messages 3
-;	send-gitter/post [%user user %rooms room %unreadItems] rejoin [{^{"chat":[} messages {]^}}]
-	send-gitter/post [%user user %rooms room %unreadItems] [chat: messages]
+;	send/post [%user user %rooms room %unreadItems] rejoin [{^{"chat":[} messages {]^}}]
+	send/post [%user user %rooms room %unreadItems] [chat: messages]
 ]
 
 list-orgs: function [
 	user
 ] [
-	send-gitter [%user user %orgs]
+	send [%user user %orgs]
 ]
 
 list-repos: function [
 	user
 ] [
-	send-gitter [%user user %repos]
+	send [%user user %repos]
 ]
 
 list-channels: function [
 	user
 ] [
 	; TODO
+]
+
+; --- end of Gritter context
+
 ]
