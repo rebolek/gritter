@@ -250,11 +250,9 @@ mark-as-read: function [
 	user: get-id user
 	room: get-id room
 	unless block? messages [messages: reduce messages]
-;	messages: rejoin collect [foreach message messages [keep rejoin [form message {", "}]]]
-;	insert messages {"}
-;	remove/part back back back tail messages 3
-;	send/post [%user user %rooms room %unreadItems] rejoin [{^{"chat":[} messages {]^}}]
-	send/post [%user user %rooms room %unreadItems] [chat: messages]
+	unless empty? messages [
+		send/post [%user user %rooms room %unreadItems] [chat: messages]
+	]
 ]
 
 list-orgs: function [
