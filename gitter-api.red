@@ -132,7 +132,7 @@ user-rooms: function [
 ]
 
 get-room-info: function [
-	room
+	room "Room name"
 ] [
 	send/post %rooms [uri: room]
 ]
@@ -142,6 +142,7 @@ join-room: function [
 	room ""
 	/by-id "Room arg is id instead of name"
 ] [
+	; TODO: use get-id here
 	user: get-id user
 	unless by-id [room: select get-room-info room 'id]
 	send/post [%user user %rooms] [id: room]
@@ -185,6 +186,7 @@ remove-room: function [
 list-users: function [
 	room
 ] [
+	room: get-id room
 	send [%rooms room %users]
 ]
 
@@ -195,15 +197,17 @@ get-messages: function [
 	/with "skip, beforeId, afterId, aroundId, limit, q (search query)"
 		values
 ] [
+	room: get-id room
 	data: copy [%rooms room %chatMessages]
 	if with [append data compose [? (values)]]
 	send data
 ]
 
 get-message: function [
-	room
-	id
+	room 	"Room object or ID"
+	id 		"Message ID"
 ] [
+	room: get-id room
 	send [%rooms room %chatMessages id]
 ]
 
@@ -211,6 +215,7 @@ send-message: function [
 	room
 	text
 ] [
+	room: get-id room
 	send/post [%rooms room %chatMessages] [text: text]
 ]
 
@@ -219,6 +224,7 @@ update-message: function [
 	text
 	id
 ] [
+	room: get-id room
 	send/post [%rooms room %chatMessages id] [text: text]
 ]
 
@@ -242,6 +248,7 @@ mark-as-read: function [
 	messages [string! issue! block!]
 ] [
 	user: get-id user
+	room: get-id room
 	unless block? messages [messages: reduce messages]
 ;	messages: rejoin collect [foreach message messages [keep rejoin [form message {", "}]]]
 ;	insert messages {"}
