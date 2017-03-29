@@ -43,7 +43,7 @@ map: function [
 	data
 ] [
 	value: none
-	parse data [
+	parse data: copy data [
 		some [
 			change set value set-word! (reduce ['quote value])
 		|	skip	
@@ -107,7 +107,7 @@ send: function [
 		insert last header [Content-Type: "application/json"]
 		append header json-map any [post-data put-data]
 	]
-	decode write/info probe link probe header
+	decode write/info link header
 ]
 
 ; --- groups resource
