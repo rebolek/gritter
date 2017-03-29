@@ -107,7 +107,7 @@ send: function [
 		insert last header [Content-Type: "application/json"]
 		append header json-map any [post-data put-data]
 	]
-	decode write/info link header
+	decode probe write/info probe link probe header
 ]
 
 ; --- groups resource
