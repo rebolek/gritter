@@ -11,7 +11,7 @@ json: context [
 	sign:		 charset "+-"
 	digit-nz:	 charset "123456789"
 	digit:		 append copy digit-nz #"0"
-	hexa:		 union digit charset "ABCDEabcde"
+	hexa:		 union digit charset "ABCDEFabcdef"
 	blank:		 charset " ^(09)^(0A)^(0D)"
 	ws:			 [any blank]
 	dbl-quote:	 #"^""
