@@ -89,7 +89,8 @@ json: context [
 	array: [#"[" collect opt [ws value any [ws #"," ws value]] ws #"]"]
 	
 	decode: function [data [string!] return: [block! object!]][
-		parse data [collect any [blank | object-rule | array]]
+		output: parse data [collect any [blank | object-rule | array | value]]
+		either equal? 1 length? output [first output] [output]
 	]
 
 	encode-into: function [data [any-type!] buffer [string!]][
