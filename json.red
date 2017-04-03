@@ -95,9 +95,9 @@ json: context [
 
 	encode-into: function [data [any-type!] buffer [string!]][
 		case [
-			map? data [
+			any [map? data object? data] [
 				append buffer #"{"
-				either zero? length? data [
+				either zero? length? words-of data [
 					append buffer #"}"
 				][
 					foreach word words-of data [
