@@ -72,6 +72,17 @@ do-rule: [
 	(reply: attempt [do load value]) ; TODO: rewrite to be safer
 ]
 
+parse-command: func [
+	message
+] [
+	reply: none
+	switch message/text [
+		"/time" [reply: rejoin ["It is " now/time]]
+	]
+	print ["=== Reply:" mold reply]
+	if reply [gitter/send-message room reply]
+]
+
 parse-message: func [
 	message
 ] [
@@ -90,13 +101,22 @@ parse-message: func [
 	if reply [gitter/send-message room reply]
 ]
 
-process-messages: func [] [
+process-mentions: func [] [
 	print ["=== Process" length? messages/mention "messages"]
 	foreach message messages/mention [
 		print ["--- Processing" message]
 		; we care only about messages for our bot (may change later)
 		parse-message gitter/get-message room message
 	]
+]
+
+process-messages: func [] [
+print ["=== Process" length? messages/chat "messages"]
+	foreach message messages/chat [
+		print ["--- Processing" message]
+		; we care only about messages for our bot (may change later)
+		parse-command gitter/get-message room message
+	]	
 ]
 
 mark-messages: func [] [
@@ -141,6 +161,7 @@ join-room 'red-gitter/lobby
 ; TODO: this should be in forever loop
 forever [
 	read-messages
+	process-mentions ; TODO: use just process messages here?
 	process-messages
 	mark-messages
 	wait 3 ; do not run like mad
