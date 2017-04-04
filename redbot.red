@@ -45,7 +45,7 @@ read-messages: func [] [
 	messages: gitter/list-unread user room
 ]
 
-; TODO: move rules elswhere
+; TODO: move rules elsewhere
 
 hallo-rule: [
 	thru ["hi" | "hello"]
@@ -157,13 +157,16 @@ list-issues: function [] [
 
 ; --- main
 
-join-room 'red-gitter/lobby
-; TODO: this should be in forever loop
-forever [
-	read-messages
-	process-mentions ; TODO: use just process messages here?
-	process-messages
-	mark-messages
-	wait 3 ; do not run like mad
+redbot: does [
+	join-room 'red-gitter/lobby
+	; TODO: this should be in forever loop
+	forever [
+		read-messages
+		process-mentions ; TODO: use just process messages here?
+		process-messages
+		mark-messages
+		wait 3 ; do not run like mad
+	]
 ]
 
+"Run Redbot by typing >> redbot"
