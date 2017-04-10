@@ -13,6 +13,40 @@ Red [
 
 do %json.red
 
+
+make-url: function [
+	"Make URL from simple dialect"
+	data
+] [
+	value: none
+	args: clear []
+	link: make url! 80
+	args-rule: [
+		ahead block! into [
+			some [
+				set value set-word! (append args rejoin [form value #"="])
+				set value [word! | string! | integer!] (
+					if word? value [value: get :value]
+					append args rejoin [value #"&"]
+				)
+			]
+		]
+	]
+	parse append clear [] data [
+		some [
+			args-rule
+		|	set value [set-word! | file! | url! ] (append link dirize form value)
+		|	set value word! (append link dirize form get :value)	
+		]
+	]
+	unless empty? args [
+		change back tail link #"?"
+		append link args
+	]
+	head remove back tail link	
+]
+
+
 gitter: context [
 
 any-map?: func [
@@ -33,10 +67,6 @@ get-id: func [
 
 decode: function [data] [
 	json/decode third data
-]
-
-bearer: function [token] [
-	rejoin ["Bearer " token]
 ]
 
 map: function [
@@ -64,6 +94,7 @@ json-map: func [
 ;		gitter api
 ; ----------------------------------------------------------------------------
 
+
 send: function [
 	data
 	"Send GET request to gitter API"
@@ -77,43 +108,18 @@ send: function [
 		put  ['PUT]
 		true ['GET]
 	]
-	; 
-	value: none
-	args: clear []
-	link: copy https://api.gitter.im/v1/
-	args-rule: [
-		ahead block! into [
-			some [
-				set value set-word! (append args rejoin [form value #"="])
-				set value [word! | string! | integer!] (
-					if word? value [value: get :value]
-					append args rejoin [value #"&"]
-				)
-			]
-		]
-	]
-	parse append clear [] data [
-		some [
-			args-rule
-		|	set value [set-word! | file!] (append link dirize form value)
-		|	set value word! (append link dirize form get :value)	
-		]
-	]
-	unless empty? args [
-		change back tail link #"?"
-		append link args
-	]
-	remove back tail link
+	link: make-url compose [https://api.gitter.im/v1/ (data)]
 	header: compose/deep [
 		(type) [
 			Accept: "application/json"
-			Authorization: (bearer token)
+			Authorization: (rejoin ["Bearer " token])
 		]
 	]
 	if any [post put] [
 		insert last header [Content-Type: "application/json"]
 		append header json-map any [post-data put-data]
 	]
+	tw-send/with link 'GET second header
 	decode write/info link header
 ]
 
