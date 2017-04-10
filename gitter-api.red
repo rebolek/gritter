@@ -46,6 +46,48 @@ make-url: function [
 	head remove back tail link	
 ]
 
+send-request: function [
+	link 
+	method
+	/data 		"Use with POST and other methods"
+		content
+	/with 
+		args
+	/auth
+		auth-type [word!]
+		auth-data
+] [
+	header: clear #()
+	if with [extend header args]
+	if auth [
+		switch auth-type [
+			Basic [
+				; TODO: Add basic authentization (see GitHub API)
+			]
+			OAuth [
+				; TODO: Add OAuth (see Twitter API)
+			]
+			Bearer [
+				; token passing for Gitter
+				extend header compose [
+					Authorization: (rejoin [auth-type space auth-data])
+				]
+			]
+		]
+	]
+	data: reduce [method body-of header]
+	if content [append data content]
+	reply: write/info link data
+	type: first split reply/2/Content-Type #";"
+	map [
+		code: reply/1
+		headers: reply/2
+		raw: reply/3
+; TODO: decode data based on reply/2/Content-Type		
+;		data: (www-form/decode reply/3 type)
+		data: json/decode reply/3
+	]
+]
 
 gitter: context [
 
@@ -65,10 +107,6 @@ get-id: func [
 	data
 ]
 
-decode: function [data] [
-	json/decode third data
-]
-
 map: function [
 	"Make map with reduce/no-set emulation"
 	data
@@ -83,17 +121,9 @@ map: function [
 	make map! reduce data
 ]
 
-json-map: func [
-	"Return JSON object from specs"
-	data
-] [
-	json/encode map data
-]
-
 ; ----------------------------------------------------------------------------
 ;		gitter api
 ; ----------------------------------------------------------------------------
-
 
 send: function [
 	data
@@ -103,24 +133,21 @@ send: function [
 	/put
 		put-data
 ] [
-	type: case [
+	method: case [
 		post ['POST]
 		put  ['PUT]
 		true ['GET]
 	]
 	link: make-url compose [https://api.gitter.im/v1/ (data)]
-	header: compose/deep [
-		(type) [
-			Accept: "application/json"
-			Authorization: (rejoin ["Bearer " token])
-		]
+	header: [
+		Accept: "application/json"
 	]
 	if any [post put] [
-		insert last header [Content-Type: "application/json"]
-		append header json-map any [post-data put-data]
-	]
-	tw-send/with link 'GET second header
-	decode write/info link header
+		insert header [Content-Type: "application/json"]
+		post-data: json/encode map any [post-data put-data]
+	] 
+	ret: send-request/data/with/auth link method post-data header 'Bearer token
+	ret/data
 ]
 
 ; --- groups resource
