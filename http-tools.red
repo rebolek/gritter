@@ -82,3 +82,76 @@ send-request: function [
 		data: json/decode reply/3
 	]
 ]
+
+www-form: object [
+	encode: function [
+		data
+		/only "Ignore NONE values"
+		/with 
+			pattern
+	] [
+		if any [map? data object? data] [data: body-of data]
+		print mold data
+		unless with [pattern: [key {="} value {", }]]
+		output: collect/into [
+			foreach [key value] data [
+				if any [not only all [only value]] [
+					keep rejoin bind pattern 'key
+				] 
+			]
+		] make string! 1000
+		cut-tail/part output either with [length? form last pattern] [2]
+	]
+	decode: function [
+		text
+		type
+	] [
+		; TODO: just www-form decoder should be here
+		;		there should be another function on top of this (MIME-DECODER)
+		switch type [
+			"application/json" [text]
+			"application/x-www-form-urlencoded" [
+				text: make map! split text charset "=&"
+			]
+			"text/html" [
+				text: make map! split text charset "=&"
+			]
+		]
+		text
+	]
+]
+
+make-nonce: function [] [
+	nonce: enbase/base checksum form random/secure 2147483647 'SHA512 64
+	remove-each char nonce [find "+/=" char]
+	copy/part nonce 32
+]
+
+get-unix-timestamp: function [
+	"Read UNIX timestamp from Internet"
+] [
+	date: none
+	page: read http://www.unixtimestamp.com/
+	parse page [
+		thru "The Current Unix Timestamp"
+		thru <h3 class="text-danger">
+		copy date to <small>
+	]
+	to integer! date
+]
+
+url-encode: function [
+	text [any-string!]
+] [
+	value: none
+	chars: charset ["!'*,-.~_" #"0" - #"9" #"A" - #"Z" #"a" - #"z"]
+	rejoin head insert parse text [
+		collect [
+			some [
+				keep some chars
+			|	space keep #"+"	
+			|	set value skip keep (head insert enbase/base form value 16 %"%")
+			]
+		]
+	] ""
+]
