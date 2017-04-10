@@ -114,7 +114,7 @@ send: function [
 		insert last header [Content-Type: "application/json"]
 		append header json-map any [post-data put-data]
 	]
-	decode write/info probe link probe header
+	decode write/info link header
 ]
 
 ; --- groups resource
@@ -207,7 +207,7 @@ get-messages: function [
 	room: get-id room
 	data: copy [%rooms room %chatMessages]
 	if with [append/only data values]
-	send probe data
+	send data
 ]
 
 get-message: function [
