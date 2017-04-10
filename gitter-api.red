@@ -26,12 +26,13 @@ get-id: func [
 	"Return ID from user or room object/map or pass ID"
 	data
 ] [
+	if path? data [data: get-room-info data] ; TODO: cache room info
 	if any-map? data [data: data/id]
 	data
 ]
 
 decode: function [data] [
-	first json/decode third data
+	json/decode third data
 ]
 
 bearer: function [token] [
@@ -78,15 +79,17 @@ send: function [
 	]
 	; 
 	value: none
+	args: clear []
 	link: copy https://api.gitter.im/v1/
 	args-rule: [
-		'? (change back tail link #"?")
-		some [
-			set value set-word! (append link rejoin [form value #"="])
-			set value [word! | string! | integer!] (
-				if word? value [value: get :value]
-				append link rejoin [value #"&"]
-			)
+		ahead block! into [
+			some [
+				set value set-word! (append args rejoin [form value #"="])
+				set value [word! | string! | integer!] (
+					if word? value [value: get :value]
+					append args rejoin [value #"&"]
+				)
+			]
 		]
 	]
 	parse append clear [] data [
@@ -95,6 +98,10 @@ send: function [
 		|	set value [set-word! | file!] (append link dirize form value)
 		|	set value word! (append link dirize form get :value)	
 		]
+	]
+	unless empty? args [
+		change back tail link #"?"
+		append link args
 	]
 	remove back tail link
 	header: compose/deep [
@@ -107,7 +114,7 @@ send: function [
 		insert last header [Content-Type: "application/json"]
 		append header json-map any [post-data put-data]
 	]
-	decode probe write/info probe link probe header
+	decode write/info probe link probe header
 ]
 
 ; --- groups resource
@@ -199,8 +206,8 @@ get-messages: function [
 ] [
 	room: get-id room
 	data: copy [%rooms room %chatMessages]
-	if with [append data compose [? (values)]]
-	send data
+	if with [append/only data values]
+	send probe data
 ]
 
 get-message: function [
