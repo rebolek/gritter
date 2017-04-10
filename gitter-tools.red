@@ -71,21 +71,24 @@ strip-message: function [
 	message/meta: none
 ]
 
-download-all-messages: function [
+download-all-messages: func [
 	room
 	/only "Remove some unnecessary fields"
+	/to
+		filename
 ] [
+	unless to [filename: %messages.red]
 	ret: gitter/get-messages room
 	if only [foreach message ret [strip-message message]]
 	last-id: ret/1/id
-	write %messages.red mold/only reverse ret
+	write filename mold/only reverse ret
 	until [
 		ret: gitter/get-messages/with room [beforeId: last-id]
 		if only [foreach message ret [strip-message message]]
 		unless empty? ret [
 		;	print ret/1/sent
 			last-id: ret/1/id
-			write/append %messages.red mold/only reverse ret
+			write/append filename mold/only reverse ret
 		]
 		empty? ret
 	]
