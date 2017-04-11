@@ -116,8 +116,8 @@ send: func [
 		insert last header-data [Content-Type: "application/json"]
 		append header-data json/encode request
 	]
-	raw: write/info link header-data
-	response: first json/decode raw/3
+	set 'res raw: write/info link header-data
+	response: json/decode raw/3
 	either header [raw] [response]
 ]
 
@@ -285,7 +285,7 @@ comment {
     Create a Tree 			- MAKE-TREE
 }
 
-; GET /repos/:owner/:repo/git/trees/:sha
+; GET /repos/:owner/:repo/gitget/trees/:sha
 
 get-tree: func [
 	repo [path!] "Repository in format owner/repo"
@@ -549,7 +549,21 @@ comment {
 list-repo: function [
 
 ] [
+	
+]
 
+get-repo: function [
+	repo
+] [
+	send [%repos repo]
+]
+
+get-repo-content: function [
+	repo
+	path
+] [
+;GET /repos/:owner/:repo/contents/:path
+	send [%repos repo %contents path]
 ]
 
 ; --- tools
