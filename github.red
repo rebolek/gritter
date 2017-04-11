@@ -43,34 +43,19 @@ export: function [
 
 github: context [
 
-; --- internal support functions
-
-decode: function [data] [
-	json/decode third data
-]
-
-json-map: func [
-	"Return JSON object from specs"
-	data
-] [
-	json/encode map data
-]
-
 ; --- send
 
 send: func [
 	"Send request to Github API (GET by default)"
 	data
-	/type "Send different request type (POST, PUT, ...)"
+	/method "Send different request type (POST, PUT, ...)"
 		req-type
 		request
 	/full "Return raw data" ; TODO: rename
-	/local value link args-rule header-data
+	/local link args-rule header-data
 ] [
-	method: either type [req-type] ['GET]
-	value: none
-	link: compose [https://api.github.com/ (data)]
-
+	method: either method [req-type] ['GET]
+	link: make-url compose [https://api.github.com/ (data)]
 	header: [
 		Accept: "application/vnd.github.v3+json"
 	]
@@ -80,8 +65,8 @@ send: func [
 		]
 		request: json/encode request
 	]
-	ret: send-request/data/with/auth probe make-url probe link method request header 'Basic reduce [user pass]
-	either full [ret] [json/decode ret/raw]
+	response: send-request/data/with/auth link method request header 'Basic reduce [user pass]
+	either full [response] [response/data]
 ]
 
 ; ---------------------------------
@@ -89,7 +74,6 @@ send: func [
 user: none
 pass: none
 response: none
-raw: none
 
 login: func [
 	username
@@ -185,14 +169,14 @@ make-gist: func [
 	]
 
 	link: either update [reduce [%gists id]] [%gist]
-	send/type link 'POST gist 
+	send/method link 'POST gist 
 	; TODO: error handling
 	response/id
 ]
 
 gist-commits: func ["List gist commits" id] [send [%gists id %commits]]
 
-fork-gist: func [id] [send/type [%gists id %forks] 'POST none]
+fork-gist: func [id] [send/method [%gists id %forks] 'POST none]
 
 list-git-forks: func [id] [send [%gists id %forks]]
 
@@ -227,7 +211,7 @@ make-commit: func [
 	; TODO: optional args author and commiter
 ] [
 	unless block? parents [parents: reduce [parents]]
-	send/type [%repos repo %git %commits] 'POST make map! reduce [
+	send/method [%repos repo %git %commits] 'POST make map! reduce [
 		quote message: message
 		quote tree: tree
 		quote parents: parents
@@ -266,7 +250,7 @@ make-tree: func [
 	tree
 ] [
 	; TODO: some checks if tree has necessary fields
-	send/type [%repos repo %git %trees] 'POST tree
+	send/method [%repos repo %git %trees] 'POST tree
 ]
 
 ; --- BLOBS ---
@@ -289,7 +273,7 @@ make-blob: func [
 		enc-type
 ] [
 	unless enc-type [enc-type: 'utf8]
-	send/type [%repos repo %git %blobs] 'POST make map! reduce [
+	send/method [%repos repo %git %blobs] 'POST make map! reduce [
 		quote content: content
 		quote encoding: enc-type
 	]
@@ -302,7 +286,7 @@ make-reference: function [
 	name [path!]	"Reference in format refs/heads/branch"
 	sha
 ] [
-	send/type [%repos repo %git %refs] 'POST make map! reduce [
+	send/method [%repos repo %git %refs] 'POST make map! reduce [
 		quote ref: form name
 		quote sha: sha
 	]
@@ -316,7 +300,7 @@ update-reference: function [
 ] [
 ;PATCH /repos/:owner/:repo/git/refs/:ref
 	; FIXME: POST should be PATCH
-	send/type [%repos repo %git %refs name] 'POST make map! reduce [
+	send/method [%repos repo %git %refs name] 'POST make map! reduce [
 		quote sha: sha
 		quote force: force
 	]
@@ -457,7 +441,7 @@ make-issue: function [
 		label 				(repend header [quote label: labels])
 		milestone 			(repend header [quote milestone: milestone-id])
 	]
-	send/type [%repos repo %issues] 'POST header
+	send/method [%repos repo %issues] 'POST header
 ]
 
 comment {
