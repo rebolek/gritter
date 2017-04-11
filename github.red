@@ -8,6 +8,7 @@ You must set GITHUB/USER and GITHUB/PASS to your username and password.
 ]
 
 do %json.red
+do %http-tools.red
 
 map-each: function [
 	'word ; NOTE: leaks word
@@ -45,21 +46,7 @@ github: context [
 ; --- internal support functions
 
 decode: function [data] [
-	first json/decode third data
-]
-
-map: function [
-	"Make map with reduce/no-set emulation"
-	data
-] [
-	value: none
-	parse data [
-		some [
-			change set value set-word! (reduce ['quote value])
-		|	skip	
-		]
-	]
-	make map! reduce data
+	json/decode third data
 ]
 
 json-map: func [
@@ -77,48 +64,24 @@ send: func [
 	/type "Send different request type (POST, PUT, ...)"
 		req-type
 		request
-	/header "Return raw data" ; TODO: rename
+	/full "Return raw data" ; TODO: rename
 	/local value link args-rule header-data
 ] [
-	type: either type [req-type] ['GET]
+	method: either type [req-type] ['GET]
 	value: none
-	link: copy https://api.github.com/
-	args-rule: [
-		'? (change back tail link #"?")
-		some [
-			set value set-word! (append link rejoin [form value #"="])
-			set value [word! | string! | integer!] (
-				if word? value [value: get :value]
-				append link rejoin [value #"&"]
-			)
-		]
-	]
-	parse append clear [] data [
-		some [
-			args-rule
-		|	set value [set-word! | file! | string! | path!] (append link dirize form value)
-		|	set value word! (append link dirize form get :value)	
-		]
-	]
-	remove back tail link
-	
-	header-data: compose/deep [
-		(type) [
-			Accept: "application/vnd.github.v3+json"
-		]
-	]
-	if all [user pass] [
-		append last header-data compose [
-			Authorization: (rejoin ["Basic " enbase rejoin [user #":" pass]])
-		]
+	link: compose [https://api.github.com/ (data)]
+
+	header: [
+		Accept: "application/vnd.github.v3+json"
 	]
 	unless equal? 'GET type [
-		insert last header-data [Content-Type: "application/json"]
-		append header-data json/encode request
+		insert header [
+			Content-Type: "application/json"
+		]
+		request: json/encode request
 	]
-	set 'res raw: write/info link header-data
-	response: json/decode raw/3
-	either header [raw] [response]
+	ret: send-request/data/with/auth probe make-url probe link method request header 'Basic reduce [user pass]
+	either full [ret] [json/decode ret/raw]
 ]
 
 ; ---------------------------------
@@ -443,7 +406,7 @@ get-issues: function [
 		insert head filter '?
 	]
 	if with [append link filter]
-	ret: send/header link
+	ret: send/full link
 
 	either total [
 		parse ret/2/link [thru "next" thru "page=" copy count to #">"] 
