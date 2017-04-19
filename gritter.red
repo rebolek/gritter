@@ -324,12 +324,12 @@ draw-avatar: function [
 	unless avatars/:name [
 		repend avatars [to word! message/fromUser/username load to url! message/fromUser/avatarUrlSmall]
 	]
-	color: average-color avatars/:name
+	; color: average-color avatars/:name
 	size: either height < 50 [30x30] [50x50]
 	compose [
 	;	base (probe as-pair 50 - size/x / 5 0) transparent
-	;	image (get avatar-path) (size)
-		base (size) (color)
+		image (get avatar-path) (size)
+	;	base (size) (color)
 	;	base (probe as-pair 50 - size/x / 2 0) transparent
 	]
 ]
