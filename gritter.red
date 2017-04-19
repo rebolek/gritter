@@ -227,7 +227,7 @@ gritter: context [
 		area-input: area 580x100 ; [probe face/text]
 		button "Send" [
 			unless empty? area-input/text [
-				send-message room-id area-input/text
+				gitter/send-message room-id area-input/text
 				clear area-input/text
 				show area-input
 				refresh/force list-chat
