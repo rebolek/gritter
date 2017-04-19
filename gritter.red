@@ -21,15 +21,16 @@ do %marky-mark.red
 
 system/view/auto-sync?: false
 
-; ----------------------------------------------------------------------------
-;		support
-; ----------------------------------------------------------------------------
 
 either exists? %options.red [
 	do load %options.red
 ] [
-	token: ask "Please, type your Gitter token (you can get one at https://developer.gitter.im/apps):"
+	token: ask "Please, type your Gitter token (you can get one at https://developer.gitter.im/apps): "
 ]
+
+; ----------------------------------------------------------------------------
+;		support
+; ----------------------------------------------------------------------------
 
 inside-face?: function [
 	face
