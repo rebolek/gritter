@@ -112,6 +112,7 @@ gritter: context [
 		messages: gitter/get-messages room-id
 		list-chat/pane: layout/tight/only show-messages messages
 		show main-lay
+		do-events
 	]
 
 	not-shown: function [
