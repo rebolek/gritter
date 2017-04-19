@@ -26,9 +26,9 @@ system/view/auto-sync?: false
 ; ----------------------------------------------------------------------------
 
 either exists? %options.red [
-	do %options.red
+	do load %options.red
 ] [
-	token: to issue! ask "Please, type your Gitter token (you can get one at https://developer.gitter.im/apps):"
+	token: ask "Please, type your Gitter token (you can get one at https://developer.gitter.im/apps):"
 ]
 
 inside-face?: function [
@@ -81,17 +81,25 @@ unless value? 'rejoin [
 
 gritter: context [
 	; TODO: token here?
-	info: user-info
-	user-id: info/id
+	info: none
+	user-id: none
 	room-ids: none
 	data-rooms: none
 	data-chat: none
-	room-id: func [] [if all [room-ids list-rooms/selected] [pick room-ids list-rooms/selected]]
-
+	room-id: func [] [
+		either all [room-ids list-rooms/selected] [
+			pick room-ids list-rooms/selected
+		] [
+			first room-ids
+		]
+	]
+	
 	init: func [
 		/local rooms chat
 	] [
-		rooms: user-rooms user-id
+		info: gitter/user-info
+		user-id: info/id
+		rooms: gitter/user-rooms user-id
 		data-rooms: collect [
 			foreach room rooms [keep room/name]
 		]
@@ -100,8 +108,7 @@ gritter: context [
 		]
 		list-rooms/data: data-rooms
 		list-rooms/selected: 1 ; TODO: remember last selection
-
-		messages: get-messages room-id
+		messages: gitter/get-messages room-id
 		list-chat/pane: layout/tight/only show-messages messages
 		view main-lay
 	]
@@ -128,9 +135,7 @@ gritter: context [
 		face
 		/force
 	] [
-;		prin ["get unread..."]
-		unread: list-unread user-id room-id
-;		print ["done." force unread/chat not-shown face/pane unread]
+		unread: gitter/list-unread user-id room-id
 		if any [
 			force
 			all [
@@ -140,12 +145,14 @@ gritter: context [
 			]
 		] [
 ;			print "refresh required"
-			messages: get-messages room-id
+			messages: gitter/get-messages room-id
 			face/pane: layout/tight/only show-messages messages
 			face/pane/1/offset/y: face/size/y - face/pane/1/size/y
 			show face
 		] 
 	]
+	
+	; FIXME: layout leaks face names (i.e.: list-rooms)
 
 	main-lay: layout [
 		title "Gritter - A Red Gitter Client"
@@ -210,7 +217,7 @@ gritter: context [
 			]
 		]
 
-		list-chat: panel white 600x370 [] rate 1 now 
+		list-chat: panel white 600x370 [] rate 1 ; now 
 			on-time [
 				refresh face
 			] 
