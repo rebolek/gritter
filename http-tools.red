@@ -8,21 +8,6 @@ Red [
 
 do %json.red
 
-map: function [
-	"Make map with reduce/no-set emulation"
-	data
-] [
-	value: none
-	parse data [
-		some [
-			change set value set-word! (reduce ['quote value])
-		|	skip	
-		]
-	]
-	make map! reduce data
-]
-
-
 make-url: function [
 	"Make URL from simple dialect"
 	data
@@ -71,7 +56,9 @@ send-request: function [
 	if auth [
 		switch auth-type [
 			Basic [
-				Authorization: (rejoin [auth-type space enbase rejoin [first auth-data #":" second auth-data]])
+				extend header compose [
+					Authorization: (rejoin [auth-type space enbase rejoin [first auth-data #":" second auth-data]])
+				]
 			]
 			OAuth [
 				; TODO: Add OAuth (see Twitter API)
@@ -88,13 +75,13 @@ send-request: function [
 	if content [append data content]
 	reply: write/info link data
 	type: first split reply/2/Content-Type #";"
-	map [
-		code: reply/1
-		headers: reply/2
-		raw: reply/3
+	make map! reduce [
+		quote code: reply/1
+		quote headers: reply/2
+		quote raw: reply/3
 ; TODO: decode data based on reply/2/Content-Type		
 ;		data: (www-form/decode reply/3 type)
-		data: json/decode reply/3
+		quote data: json/decode reply/3
 	]
 ]
 
