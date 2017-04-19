@@ -21,7 +21,6 @@ do %marky-mark.red
 
 system/view/auto-sync?: false
 
-
 either exists? %options.red [
 	do load %options.red
 ] [
@@ -79,7 +78,6 @@ unless value? 'rejoin [
 ;		GUI
 ; ----------------------------------------------------------------------------
 
-
 gritter: context [
 	; TODO: token here?
 	info: none
@@ -98,6 +96,7 @@ gritter: context [
 	init: func [
 		/local rooms chat
 	] [
+		view/no-wait main-lay
 		info: gitter/user-info
 		user-id: info/id
 		rooms: gitter/user-rooms user-id
@@ -109,9 +108,10 @@ gritter: context [
 		]
 		list-rooms/data: data-rooms
 		list-rooms/selected: 1 ; TODO: remember last selection
+		show main-lay
 		messages: gitter/get-messages room-id
 		list-chat/pane: layout/tight/only show-messages messages
-		view main-lay
+		show main-lay
 	]
 
 	not-shown: function [
@@ -224,7 +224,12 @@ gritter: context [
 			] 
 		scroller
 		return
-		area-input: area 580x100 ; [probe face/text]
+		text 220 "Search:" right
+		field 500 [
+			probe face/text
+		]
+		return
+		area-input: area 680x100 ; [probe face/text]
 		button "Send" [
 			unless empty? area-input/text [
 				gitter/send-message room-id area-input/text
