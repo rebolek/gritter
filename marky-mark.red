@@ -77,7 +77,7 @@ marky-mark: func [
 	; ---
 
 	code-rule: [
-		#"`" copy value to #"`" skip (
+		copy mark ["```" | #"`"] copy value to mark thru mark (
 			repend out [copy text 'code value]
 			clear text
 		)
