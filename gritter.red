@@ -27,6 +27,7 @@ either exists? %options.red [
 	token: ask "Please, type your Gitter token (you can get one at https://developer.gitter.im/apps): "
 ]
 
+
 ; ----------------------------------------------------------------------------
 ;		support
 ; ----------------------------------------------------------------------------
@@ -110,7 +111,9 @@ gritter: context [
 		list-rooms/selected: 1 ; TODO: remember last selection
 		show main-lay
 		messages: gitter/get-messages room-id
-		list-chat/pane: layout/tight/only show-messages messages
+		list-chat/pane: layout/tight/only m: show-messages messages
+		save %layout.red m
+		save %pane.red list-chat/pane 
 		show main-lay
 		do-events
 	]
@@ -366,18 +369,36 @@ draw-body: function [
 		]
 ]
 
+draw-body-tb: function [
+	message
+	body
+] [
+	probe name: to word! rejoin ["msg-" message/id]
+	probe compose/deep [
+		(to set-word! name) base 240.240.240 530x100 ;(body/2) 
+			draw [text 0x0 (make body [])] 
+			extra (make object! [
+				id: message/id
+			])
+		do [(make set-path! reduce [name 'flags]) [Direct2D]]
+	]
+]
+
+
 show-messages: function [
 	messages
 ] [
 	out: copy []
 	foreach message messages [
-		body: rich-text/info emit-rich marky-mark message/text 530
+		body: emit-text-box marky-mark message/text
 		append out compose/deep [
 			base 240.240.240 600x20 draw [(draw-header message)]
 			return
-			(draw-avatar message body/2/y)
+			(
+				draw-avatar message 50 ; TODO: get height from text-box metric
+			)
 			space 5x0
-			(draw-body message body)
+			(draw-body-tb message body)
 			return
 		]
 	]

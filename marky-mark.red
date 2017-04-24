@@ -196,3 +196,39 @@ emit-rich: function [
 	]
 	out
 ]
+
+; --- text-box! emiter
+
+
+emit-text-box: function [
+	data
+	/width
+		x-size
+] [
+	unless width [x-size: 530]
+	value: none
+	stack: make block! 20
+	styles: make block! 2 * length? data
+	text: clear ""
+	position: 1
+	parse data [
+		some [
+			set value string! (
+				append text value
+				repend styles [position length? value 'font-name fonts/text/name 'font-size fonts/text/size]
+				position: position + length? value
+			)
+		|	'code set value string! (
+				append text value
+				repend styles [position length? value 'font-name fonts/fixed/name 'font-size fonts/fixed/size]
+				position: position + length? value
+		)	
+		|	skip	
+		]
+	]
+	make text-box! compose/deep [
+		text: (text)
+		styles: [(styles)] 
+		size: (as-pair x-size 300) ; TODO: how to get max Y-SIZE ?
+	]
+]
