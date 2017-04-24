@@ -86,6 +86,9 @@ gritter: context [
 	room-ids: none
 	data-rooms: none
 	data-chat: none
+	messages: none
+	text-boxes: #()
+
 	room-id: func [] [
 		either all [room-ids list-rooms/selected] [
 			pick room-ids list-rooms/selected
@@ -112,9 +115,12 @@ gritter: context [
 		show main-lay
 		messages: gitter/get-messages room-id
 		list-chat/pane: layout/tight/only m: show-messages messages
-		save %layout.red m
-		save %pane.red list-chat/pane 
 		show main-lay
+		foreach tb values-of text-boxes [
+			print mold tb
+		;	print mold get tb/target	
+		;	tb/layout
+		]
 		do-events
 	]
 
@@ -248,6 +254,85 @@ gritter: context [
 			print mold reduce [list-chat/size length? list-chat/pane pane-height]
 		]
 	]
+
+	; GUI support funcs
+
+	draw-header: function [
+		message
+	] [
+		f: make face! [
+			font: fonts/name
+		]
+		name-size: size-text/with f message/fromUser/displayName
+
+		msg: compose [
+			font (fonts/name)
+			text 0x0 (message/fromUser/displayName)
+			font (fonts/username)
+			text (as-pair name-size/x + 5 2) (rejoin [#"@" message/fromUser/username " <" message/sent ">"])
+		]
+	]
+
+	draw-avatar: function [
+		message
+		height
+	] [
+		avatar-path: 'avatars/username
+		avatar-path/2: to word! message/fromUser/username
+		name: to word! message/fromUser/username
+		unless avatars/:name [
+			repend avatars [to word! message/fromUser/username load to url! message/fromUser/avatarUrlSmall]
+		]
+		; color: average-color avatars/:name
+		size: either height < 50 [30x30] [50x50]
+		compose [
+		;	base (probe as-pair 50 - size/x / 5 0) transparent
+			image (get avatar-path) (size)
+		;	base (size) (color)
+		;	base (probe as-pair 50 - size/x / 2 0) transparent
+		]
+	]
+
+	draw-body: function [
+		message
+		body
+	] [
+		name: to word! rejoin ["msg-" message/id]
+		out: compose/deep [
+			(to set-word! name) base 240.240.240 530x100
+				draw [text 0x0 (body)] 
+				extra (make object! [
+					id: message/id
+				])
+			do [(make set-path! reduce [name 'flags]) [Direct2D]]
+		]
+		body/target: name
+		out
+	]
+
+
+	show-messages: function [
+		messages
+	] [
+		out: copy []
+		foreach message messages [
+			id: message/id
+			body: emit-text-box marky-mark message/text
+			text-boxes/:id: body
+			append out compose/deep [
+				base 240.240.240 600x20 draw [(draw-header message)]
+				return
+				(
+					draw-avatar message 50 ; TODO: get height from text-box metric
+				)
+				space 5x0
+				(draw-body message body)
+				return
+			]
+		]
+		compose/deep [across space 0x0 panel 240.240.240 [(out)]]
+	]
+
 ]
 
 ; ---
@@ -306,103 +391,6 @@ check-up: function [
 			break
 		]
 	]
-]
-
-draw-header: function [
-	message
-] [
-	f: make face! [
-		font: fonts/name
-	]
-	name-size: size-text/with f message/fromUser/displayName
-
-	msg: compose [
-		font (fonts/name)
-		text 0x0 (message/fromUser/displayName)
-		font (fonts/username)
-		text (as-pair name-size/x + 5 2) (rejoin [#"@" message/fromUser/username " <" message/sent ">"])
-	]
-]
-
-draw-avatar: function [
-	message
-	height
-] [
-	avatar-path: 'avatars/username
-	avatar-path/2: to word! message/fromUser/username
-	name: to word! message/fromUser/username
-	unless avatars/:name [
-		repend avatars [to word! message/fromUser/username load to url! message/fromUser/avatarUrlSmall]
-	]
-	; color: average-color avatars/:name
-	size: either height < 50 [30x30] [50x50]
-	compose [
-	;	base (probe as-pair 50 - size/x / 5 0) transparent
-		image (get avatar-path) (size)
-	;	base (size) (color)
-	;	base (probe as-pair 50 - size/x / 2 0) transparent
-	]
-]
-
-draw-body: function [
-	message
-	body
-] [
-	compose/deep [
-		base 240.240.240 (body/2) 
-			draw [(body/1)] 
-			extra (make object! [
-				id: message/id
-				areas: body/3
-				highlight: none
-			])
-			on-create [
-				face/flags: [all-over]
-			]
-			on-over [
-				; having check-over here directly crashes Red
-				check-over face event/offset
-			]
-			on-up [
-				check-up face event/offset
-			]
-		]
-]
-
-draw-body-tb: function [
-	message
-	body
-] [
-	probe name: to word! rejoin ["msg-" message/id]
-	probe compose/deep [
-		(to set-word! name) base 240.240.240 530x100 ;(body/2) 
-			draw [text 0x0 (make body [])] 
-			extra (make object! [
-				id: message/id
-			])
-		do [(make set-path! reduce [name 'flags]) [Direct2D]]
-	]
-]
-
-
-show-messages: function [
-	messages
-] [
-	out: copy []
-	foreach message messages [
-		body: emit-text-box marky-mark message/text
-		append out compose/deep [
-			base 240.240.240 600x20 draw [(draw-header message)]
-			return
-			(
-				draw-avatar message 50 ; TODO: get height from text-box metric
-			)
-			space 5x0
-			(draw-body-tb message body)
-			return
-		]
-	]
-	compose/deep [across space 0x0 panel 240.240.240 [(out)]]
 ]
 
 

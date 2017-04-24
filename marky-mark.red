@@ -226,7 +226,7 @@ emit-text-box: function [
 		|	skip	
 		]
 	]
-	make text-box! compose/deep [
+	make text-box! copy/deep compose/deep [
 		text: (text)
 		styles: [(styles)] 
 		size: (as-pair x-size 300) ; TODO: how to get max Y-SIZE ?
