@@ -27,6 +27,18 @@ either exists? %options.red [
 	token: ask "Please, type your Gitter token (you can get one at https://developer.gitter.im/apps): "
 ]
 
+select-by: func [
+	series
+	key
+	value
+] [
+	foreach item series [
+	;	print [value key item]
+		if equal? value select item key [return item]
+	]
+	none
+]
+
 
 ; ----------------------------------------------------------------------------
 ;		support
@@ -83,6 +95,7 @@ gritter: context [
 	; TODO: token here?
 	info: none
 	user-id: none
+	room-id: none
 	room-ids: none
 	data-rooms: none
 	data-chat: none
@@ -90,29 +103,38 @@ gritter: context [
 	text-boxes: #()
 	avatars: #()
 
-	room-id: func [] [
-		either all [room-ids list-rooms/selected] [
-			pick room-ids list-rooms/selected
-		] [
-			first room-ids
-		]
-	]
-	
+	chat-rooms: copy [] ; multi user rooms
+	user-rooms: copy [] ; one to one rooms
+
+	data-chat-rooms: none
+	data-user-rooms: none
+
+	sort-by-name: func ["Comparator for SORT" a b] [a/name < b/name]
+
 	init: func [
 		/local rooms chat
 	] [
 		view/no-wait main-lay
 		info: gitter/user-info
 		user-id: info/id
+
+		; setup room lists
 		rooms: gitter/user-rooms user-id
-		data-rooms: collect [
-			foreach room rooms [keep room/name]
+		clear chat-rooms ; multi user rooms
+		clear user-rooms ; one to one rooms
+		foreach room rooms [
+			append either room/oneToOne [user-rooms] [chat-rooms] room
 		]
-		room-ids: collect [
-			foreach room rooms [keep room/id]
-		]
-		list-rooms/data: data-rooms
+		sort/compare user-rooms :sort-by-name
+		sort/compare chat-rooms :sort-by-name
+		data-chat-rooms: collect [foreach room chat-rooms [keep room/name]]
+		data-user-rooms: collect [foreach room user-rooms [keep room/name]]
+		room-id: rooms/1/id ; TODO: remember last selection
+		list-rooms/data: data-chat-rooms
 		list-rooms/selected: 1 ; TODO: remember last selection
+		list-users/data: data-user-rooms
+		list-users/selected: 1 ; TODO: remember last selection
+
 		show main-lay
 		messages: gitter/get-messages room-id
 		list-chat/pane: layout/tight/only m: show-messages messages
@@ -223,9 +245,21 @@ gritter: context [
 				]
 			]
 
-		group-box 220x370 "Rooms" [
-			list-rooms: text-list 200x350 data data-rooms [
-				refresh/force list-chat
+		panel 220x370 [
+			below
+			group-box 210x180 "Rooms" [
+				below
+				base 0x3
+				list-rooms: text-list 190x160 data data-chat-rooms [
+					select-room chat-rooms face
+				]
+			]
+			group-box 210x180 "Users" [
+				below
+				base 0x3
+				list-users: text-list 190x160 data data-user-rooms [
+					select-room user-rooms face
+				]
 			]
 		]
 
@@ -313,6 +347,12 @@ gritter: context [
 		out
 	]
 
+	select-room: func [rooms face /local value room] [
+		value: pick face/data face/selected
+		room: select-by rooms 'name value
+		room-id: room/id
+		refresh/force list-chat
+	]
 
 	show-messages: function [
 		messages
