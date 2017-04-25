@@ -134,6 +134,7 @@ gritter: context [
 		list-rooms/selected: 1 ; TODO: remember last selection
 		list-users/data: data-user-rooms
 		list-users/selected: 1 ; TODO: remember last selection
+		main-lay/text: rejoin ["Gritter: " rooms/1/name] ; fixme		
 
 		show main-lay
 		messages: gitter/get-messages room-id
@@ -351,6 +352,8 @@ gritter: context [
 		value: pick face/data face/selected
 		room: select-by rooms 'name value
 		room-id: room/id
+		main-lay/text: rejoin ["Gritter: " value]
+		show main-lay
 		refresh/force list-chat
 	]
 
