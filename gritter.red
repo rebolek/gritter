@@ -117,7 +117,7 @@ gritter: context [
 		list-chat/pane: layout/tight/only m: show-messages messages
 		show main-lay
 		foreach tb values-of text-boxes [
-			print mold tb
+		;	print mold tb
 		;	print mold get tb/target	
 		;	tb/layout
 		]
@@ -307,6 +307,8 @@ gritter: context [
 			do [(make set-path! reduce [name 'flags]) [Direct2D]]
 		]
 		body/target: name
+		body/layout
+		out/4/y: body/height ; 4 is SIZE in draw block (see above)
 		out
 	]
 
@@ -318,15 +320,17 @@ gritter: context [
 		foreach message messages [
 			id: message/id
 			body: emit-text-box marky-mark message/text
-			text-boxes/:id: body
+			text-boxes/:id: body ; TODO: is it required?
+			body: draw-body message body ; pre-render body, so we can get height for avatar
+			height: body/4/y 
 			append out compose/deep [
 				base 240.240.240 600x20 draw [(draw-header message)]
 				return
 				(
-					draw-avatar message 50 ; TODO: get height from text-box metric
+					draw-avatar message height
 				)
 				space 5x0
-				(draw-body message body)
+				(body)
 				return
 			]
 		]
