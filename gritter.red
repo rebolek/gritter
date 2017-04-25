@@ -133,7 +133,7 @@ gritter: context [
 		list-rooms/data: data-chat-rooms
 		list-rooms/selected: 1 ; TODO: remember last selection
 		list-users/data: data-user-rooms
-		list-users/selected: 1 ; TODO: remember last selection
+		list-users/selected: none ; TODO: remember last selection
 		main-lay/text: rejoin ["Gritter: " rooms/1/name] ; fixme		
 
 		show main-lay
@@ -252,6 +252,7 @@ gritter: context [
 				below
 				base 0x3
 				list-rooms: text-list 190x160 data data-chat-rooms [
+					list-users/selected: none
 					select-room chat-rooms face
 				]
 			]
@@ -259,6 +260,7 @@ gritter: context [
 				below
 				base 0x3
 				list-users: text-list 190x160 data data-user-rooms [
+					list-rooms/selected: none
 					select-room user-rooms face
 				]
 			]
