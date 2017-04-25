@@ -120,8 +120,8 @@ marky-mark: func [
 			some alphanum
 			any alphanumsym
 		] (
-			append out reduce [copy text 'link copy value to url! value]
-			clear text
+			append out reduce ['link copy value to url! value]
+			clear value
 		)
 	]
 
@@ -223,6 +223,16 @@ emit-text-box: function [
 				repend styles [position length? value 'font-name fonts/fixed/name 'font-size fonts/fixed/size]
 				position: position + length? value
 		)	
+		|	'bold set value string! (
+				append text value
+				repend styles [position length? value 'bold]
+				position: position + length? value
+		)
+		|	'link set value string! (
+				append text value
+				repend styles [position length? value 'underline 'bold 'font-name fonts/text/name 'font-size fonts/text/size]
+				position: position + length? value
+		)
 		|	skip	
 		]
 	]
