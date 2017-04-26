@@ -100,6 +100,7 @@ gritter: context [
 	data-rooms: none
 	data-chat: none
 	messages: none
+	unread: copy []
 	text-boxes: #()
 	avatars: #()
 
@@ -169,6 +170,7 @@ gritter: context [
 		"Refresh list-chat"
 		face
 		/force
+		/extern unread
 	] [
 		unread: gitter/list-unread user-id room-id
 		if any [
@@ -179,7 +181,7 @@ gritter: context [
 				not equal? unread/chat not-shown face/pane unread
 			]
 		] [
-;			print "refresh required"
+			print "refresh required"
 			messages: gitter/get-messages room-id
 			face/pane: layout/tight/only show-messages messages
 			face/pane/1/offset/y: face/size/y - face/pane/1/size/y
@@ -268,6 +270,7 @@ gritter: context [
 
 		list-chat: panel white 600x370 [] rate 1 ; now 
 			on-time [
+				print [now/time "calling list-chat on-time"]
 				refresh face
 			] 
 		scroller
@@ -324,20 +327,18 @@ gritter: context [
 		; color: average-color avatars/:name
 		size: either height < 50 [30x30] [50x50]
 		compose [
-		;	base (probe as-pair 50 - size/x / 5 0) transparent
-			image (get avatar-path) (size)
-		;	base (size) (color)
-		;	base (probe as-pair 50 - size/x / 2 0) transparent
+			image (get avatar-path) (size) extra (name) [probe face/extra]
 		]
 	]
 
 	draw-body: function [
 		message
 		body
+		backdrop
 	] [
 		name: to word! rejoin ["msg-" message/id]
 		out: compose/deep [
-			(to set-word! name) base 240.240.240 530x100
+			(to set-word! name) base (backdrop) 530x100
 				draw [text 0x0 (body)] 
 				extra (make object! [
 					id: message/id
@@ -361,26 +362,26 @@ gritter: context [
 
 	show-messages: function [
 		messages
+		/extern unread
 	] [
 		out: copy []
 		foreach message messages [
 			id: message/id
+			backdrop: either new?: to logic! find unread/chat id [200.250.200] [240.240.240]
 			body: emit-text-box marky-mark message/text
 			text-boxes/:id: body ; TODO: is it required?
-			body: draw-body message body ; pre-render body, so we can get height for avatar
+			body: draw-body message body 240.240.240 ; pre-render body, so we can get height for avatar
 			height: body/4/y 
 			append out compose/deep [
-				base 240.240.240 600x20 draw [(draw-header message)]
+				base (backdrop) 600x20 draw [(draw-header message)] extra (new?) ; rate 1 on-time [if probe face/extra [print "new message says hello!"]]
 				return
-				(
-					draw-avatar message height
-				)
+				(draw-avatar message height)
 				space 5x0
 				(body)
 				return
 			]
 		]
-		compose/deep [across space 0x0 panel 240.240.240 [(out)]]
+		copy/deep probe compose/deep [across space 0x0 panel (backdrop) [(out)]]
 	]
 
 ]

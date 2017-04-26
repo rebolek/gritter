@@ -120,8 +120,8 @@ marky-mark: func [
 			some alphanum
 			any alphanumsym
 		] (
-			append out reduce ['link copy value to url! value]
-			clear value
+			append out reduce [copy text 'link copy value to url! value]
+			clear text
 		)
 	]
 
