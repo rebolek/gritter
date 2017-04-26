@@ -27,7 +27,7 @@ get-id: func [
 	"Return ID from user or room object/map or pass ID"
 	data
 ] [
-	if path? data [data: get-room-info data] ; TODO: cache room info
+	if path? data [data: get-room data] ; TODO: cache room info
 	if any-map? data [data: data/id]
 	data
 ]
@@ -96,7 +96,7 @@ user-rooms: function [
 	send [%user user %rooms]
 ]
 
-get-room-info: function [
+get-room: function [
 	room "Room name"
 ] [
 	send/post %rooms [uri: room]
@@ -109,7 +109,7 @@ join-room: function [
 ] [
 	; TODO: use get-id here
 	user: get-id user
-	unless by-id [room: select get-room-info room 'id]
+	unless by-id [room: select get-room room 'id]
 	send/post [%user user %rooms] [id: room]
 ]
 
