@@ -207,9 +207,12 @@ emit-text-box: function [
 ] [
 	unless width [x-size: 530]
 	value: none
+	link: none
 	stack: make block! 20
 	styles: make block! 2 * length? data
 	text: clear ""
+	areas: copy [] ; TODO: CLEAR ?
+	links: copy []
 	position: 1
 	parse data [
 		some [
@@ -228,8 +231,11 @@ emit-text-box: function [
 				repend styles [position length? value 'bold]
 				position: position + length? value
 		)
-		|	'link set value string! (
-				append text value
+		|	'link set value string! (append stack value)
+			set value url! (
+				link: value
+				append text value: take/last stack
+				repend links [position length? value link]
 				repend styles [position length? value 'underline 'bold 'font-name fonts/text/name 'font-size fonts/text/size]
 				position: position + length? value
 		)
@@ -240,5 +246,6 @@ emit-text-box: function [
 		text: (text)
 		styles: [(styles)] 
 		size: (as-pair x-size 300) ; TODO: how to get max Y-SIZE ?
+		links: [(links)]
 	]
 ]

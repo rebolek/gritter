@@ -120,16 +120,18 @@ get-code: function [
 ] [
 	code: make block! 4
 	fence: "```"
+	whitespace: charset reduce [tab space newline]
 	parse message/text [
 		some [
 			thru fence
+			any whitespace
 			copy value
-			to fence
+			to [any whitespace fence]
 			3 skip
 			(append code value)
 		]
 	]
-	either empty? code [none] [code]
+	either empty? code [none] [trim code]
 ]
 
 get-all-code: function [

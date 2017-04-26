@@ -16,6 +16,7 @@ Red [
 ; ----------------------------------------------------------------------------
 
 do %gitter-api.red
+do %gitter-tools.red
 do %rich-text.red
 do %marky-mark.red
 
@@ -137,10 +138,10 @@ gritter: context [
 
 		show main-lay
 
-		room-id: rooms/1/id
 		; FIXME: ROOM here is leaked from FOREACH ROOM ROOMS [...] above
 		;		I would like to use different room, but it crashes
 		;		only this leaked value does not lead to crash
+		room-id: rooms/1/id
 		select-room room/name ; TODO: remember last selection
 
 		show main-lay
@@ -337,11 +338,57 @@ gritter: context [
 		]
 	]
 
+	actors: context [
+		; locals
+		start:
+		length:
+		text-box:
+		index:
+		style: none
+
+		; actors
+		get-style: [
+			text-box: face/draw/3 ; draw/3 is text-box
+			index: text-box/index? event/offset
+			styles: probe text-box/styles
+			condition: [
+				if (all [index >= start index < (start + length)]) (
+					print [index start length style]
+					print text-box/links
+				) 
+				to end
+			]
+
+			parse styles [
+				some [
+					set start integer!
+					set length integer!
+					copy style some [
+						'bold | 'italic | 'underline
+					|	'font-size skip | 'font-name skip
+					]
+					opt condition
+				]
+			]
+		]
+		get-link: [
+			text-box: face/draw/3 ; draw/3 is text-box
+			index: text-box/index? event/offset
+			foreach [start length link] text-box/links [
+				if all [index >= start index < (start + length)] [
+					print [index start length link]
+				]
+			]
+		]
+	]
+
 	draw-body: function [
 		message
 		body
 		backdrop
 	] [
+		text-box: none
+		index: none
 		name: to word! rejoin ["msg-" message/id]
 		out: compose/deep [
 			(to set-word! name) base (backdrop) 530x100
@@ -349,6 +396,7 @@ gritter: context [
 				extra (make object! [
 					id: message/id
 				])
+				on-up [(actors/get-link)]
 			do [(make set-path! reduce [name 'flags]) [Direct2D]]
 		]
 		body/target: name
@@ -385,7 +433,6 @@ gritter: context [
 		room "Room name"
 		/local value topic name info
 	] [
-	;	print "select room"
 		room: gitter/get-room room
 		room-id: room/id
 		main-lay/text: rejoin ["Gritter: " value]
@@ -395,11 +442,17 @@ gritter: context [
 		name: make text-box! [size: 500x40 text: room/name font: fonts/room-name]
 		name/layout
 	;	print ["name width: " name/width] 
-		topic: make text-box! [size: as-pair 560 - name/width 40 text: room/topic]
+		topic: make text-box! [size: as-pair 500 - name/width 40 text: room/topic]
+
+		info-text: probe rejoin [
+			either room/oneToOne [""] [rejoin ["Users: " room/userCount]]
+			either empty? room/tags [""] [rejoin [", Tags: " room/tags]] ; TODO: clickable tags
+		]
+
 		info: make text-box! [
 			size: 250x20 
 			font: fonts/name
-			text: rejoin ["Users: " room/userCount ", Tags: " room/tags] ; TODO: clickable tags
+			text: info-text
 		] 
 
 		room-topic/draw: compose [
@@ -423,9 +476,11 @@ gritter: context [
 	;	print "show messages"
 		out: copy []
 		foreach message messages [
+
+			if code: get-code message [probe code]
+
 			id: message/id
 			backdrop: either new?: to logic! find unread/chat id [200.250.200] [240.240.240]
-		;	print "emit-text-box"
 			body: emit-text-box marky-mark message/text
 			text-boxes/:id: body ; TODO: is it required?
 			body: draw-body message body 240.240.240 ; pre-render body, so we can get height for avatar
