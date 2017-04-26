@@ -137,11 +137,10 @@ gritter: context [
 
 		show main-lay
 
-;		messages: gitter/get-messages room-id
-;		list-chat/pane: layout/tight/only m: show-messages messages
-;		probe rooms/1/name
-;		print ["***CALL select-room" mold room]
 		room-id: rooms/1/id
+		; FIXME: ROOM here is leaked from FOREACH ROOM ROOMS [...] above
+		;		I would like to use different room, but it crashes
+		;		only this leaked value does not lead to crash
 		select-room room/name ; TODO: remember last selection
 
 		show main-lay
