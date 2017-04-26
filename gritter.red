@@ -130,22 +130,21 @@ gritter: context [
 		sort/compare chat-rooms :sort-by-name
 		data-chat-rooms: collect [foreach room chat-rooms [keep room/name]]
 		data-user-rooms: collect [foreach room user-rooms [keep room/name]]
-		room-id: rooms/1/id ; TODO: remember last selection
+
 		list-rooms/data: data-chat-rooms
-		list-rooms/selected: 1 ; TODO: remember last selection
 		list-users/data: data-user-rooms
-		list-users/selected: none ; TODO: remember last selection
-		main-lay/text: rejoin ["Gritter: " rooms/1/name] ; fixme		
+		room-topic/flags: [Direct2D]
 
 		show main-lay
-		messages: gitter/get-messages room-id
-		list-chat/pane: layout/tight/only m: show-messages messages
+
+;		messages: gitter/get-messages room-id
+;		list-chat/pane: layout/tight/only m: show-messages messages
+;		probe rooms/1/name
+;		print ["***CALL select-room" mold room]
+		room-id: rooms/1/id
+		select-room room/name ; TODO: remember last selection
+
 		show main-lay
-		foreach tb values-of text-boxes [
-		;	print mold tb
-		;	print mold get tb/target	
-		;	tb/layout
-		]
 		do-events
 	]
 
@@ -172,6 +171,7 @@ gritter: context [
 		/force
 		/extern unread
 	] [
+	;	print "refresh"
 		unread: gitter/list-unread user-id room-id
 		if any [
 			force
@@ -248,32 +248,36 @@ gritter: context [
 				]
 			]
 
-		panel 220x370 [
+		panel 220x450 [
 			below
-			group-box 210x180 "Rooms" [
+			group-box 210x210 "Rooms" [
 				below
 				base 0x3
-				list-rooms: text-list 190x160 data data-chat-rooms [
+				list-rooms: text-list 190x200 data data-chat-rooms [
 					list-users/selected: none
-					select-room chat-rooms face
+					select-room pick face/data face/selected
 				]
 			]
-			group-box 210x180 "Users" [
+			group-box 210x210 "Users" [
 				below
 				base 0x3
-				list-users: text-list 190x160 data data-user-rooms [
+				list-users: text-list 190x200 data data-user-rooms [
 					list-rooms/selected: none
-					select-room user-rooms face
+					select-room pick face/data face/selected
 				]
 			]
 		]
-
-		list-chat: panel white 600x370 [] rate 1 ; now 
-			on-time [
-				print [now/time "calling list-chat on-time"]
-				refresh face
-			] 
-		scroller
+		panel [
+			room-icon: image 50x50
+			room-topic: base 550x50 240.240.240
+			return
+			list-chat: panel white 600x370 [] rate 1 ; now 
+				on-time [
+				;	print [now/time "calling list-chat on-time"]
+					refresh face
+				] 
+			scroller
+		]
 		return
 		text 220 "Search:" right
 		field 500 [
@@ -294,6 +298,9 @@ gritter: context [
 			foreach face list-chat/pane [pane-height: pane-height + face/size/y]
 			print mold reduce [list-chat/size length? list-chat/pane pane-height]
 		]
+	;	return
+	;	text "room info"
+	;	room-info: base 200x80 200.240.200
 	]
 
 	; GUI support funcs
@@ -351,11 +358,61 @@ gritter: context [
 		out
 	]
 
-	select-room: func [rooms face /local value room] [
+	draw-room-info: function [
+		room
+	] [
+	;	probe room
+		styles: []
+		text: room/name
+		make text-box! copy/deep compose/deep [
+			text: (text)
+			styles: [(styles)] 
+		;	size: (as-pair x-size 300) ; TODO: how to get max Y-SIZE ?
+		]
+		room/name
+	]
+
+	get-room-id: function [
+		"Return room-id from selection in list"
+		rooms
+		face
+	] [
 		value: pick face/data face/selected
 		room: select-by rooms 'name value
+		room/id
+	]
+
+	select-room: func [
+		room "Room name"
+		/local value topic name info
+	] [
+	;	print "select room"
+		room: gitter/get-room room
 		room-id: room/id
 		main-lay/text: rejoin ["Gritter: " value]
+
+		room-icon/image: load to url! room/avatarUrl ; TODO: cache room avatars (icons)
+
+		name: make text-box! [size: 500x40 text: room/name font: fonts/room-name]
+		name/layout
+	;	print ["name width: " name/width] 
+		topic: make text-box! [size: as-pair 560 - name/width 40 text: room/topic]
+		info: make text-box! [
+			size: 250x20 
+			font: fonts/name
+			text: rejoin ["Users: " room/userCount ", Tags: " room/tags] ; TODO: clickable tags
+		] 
+
+		room-topic/draw: compose [
+			text 0x0 (name) 
+			text (as-pair 10 + name/width 0) (topic)
+			text 10x33 (info)
+		]
+		show room-topic
+
+	;	room-info/draw: compose [text 0x0 (draw-room-info room)]
+	;	show room-info
+	
 		show main-lay
 		refresh/force list-chat
 	]
@@ -364,10 +421,12 @@ gritter: context [
 		messages
 		/extern unread
 	] [
+	;	print "show messages"
 		out: copy []
 		foreach message messages [
 			id: message/id
 			backdrop: either new?: to logic! find unread/chat id [200.250.200] [240.240.240]
+		;	print "emit-text-box"
 			body: emit-text-box marky-mark message/text
 			text-boxes/:id: body ; TODO: is it required?
 			body: draw-body message body 240.240.240 ; pre-render body, so we can get height for avatar
@@ -381,7 +440,7 @@ gritter: context [
 				return
 			]
 		]
-		copy/deep probe compose/deep [across space 0x0 panel (backdrop) [(out)]]
+		compose/deep [across space 0x0 panel (240.240.240) [(out)]]
 	]
 
 ]
@@ -391,6 +450,7 @@ gritter: context [
 make-fonts [
 	name: 9 30.30.30 #bold
 	username: 8 100.100.100 #bold
+	room-name: 18 100.100.100 #bold
 ]
 
 para: make para! [wrap: on]
