@@ -41,6 +41,7 @@ marky-mark: func [
 
 	temp: []
 	temp-pos: temp
+	mark: []
 	mark-stack: []
 
 	select-command: func [mark] [
@@ -133,7 +134,9 @@ marky-mark: func [
 	]
 
 	em-rule: [
-		#"*" copy value to #"*" skip (
+		set mark [#"*" | #"_"] 
+		copy value 
+		to mark mark (
 			repend out [copy text 'italic copy value]
 			clear text		
 		)
@@ -229,6 +232,16 @@ emit-text-box: function [
 		|	'bold set value string! (
 				append text value
 				repend styles [position length? value 'bold]
+				position: position + length? value
+		)
+		|	'italic set value string! (
+				append text value
+				repend styles [position length? value 'italic]
+				position: position + length? value
+		)
+		|	'underline set value string! (
+				append text value
+				repend styles [position length? value 'underline]
 				position: position + length? value
 		)
 		|	'link set value string! (append stack value)
