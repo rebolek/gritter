@@ -236,7 +236,7 @@ emit-text-box: function [
 				link: value
 				append text value: take/last stack
 				repend links [position length? value link 1 + length? styles] ; text-position length value styles-position
-				repend styles [position length? value 0.50.20 'underline 'bold 'font-name fonts/text/name 'font-size fonts/text/size]
+				repend styles [position length? value 'underline 'bold 'font-name fonts/text/name 'font-size fonts/text/size] ; FIXME: putting color here messes all styles
 				position: position + length? value
 		)
 		|	skip	

@@ -388,12 +388,12 @@ gritter: context [
 				]
 			]
 		]
-		get-link: [
+		get-link: func [face event] [
 			text-box: face/draw/3 ; draw/3 is text-box
 			index: text-box/index? event/offset
 			foreach [start length link] text-box/links [
 				if all [index >= start index < (start + length)] [
-					print [index start length link]
+					return link
 				]
 			]
 		]
@@ -413,8 +413,8 @@ gritter: context [
 				extra (make object! [
 					id: message/id
 				])
-				on-up [actors/get-link]
-				on-over [actors/get-link]
+				on-up [browse actors/get-link face event]
+			;	on-over [actors/get-link]
 			do [(make set-path! reduce [name 'flags]) [Direct2D all-over]]
 		]
 		body/target: name
