@@ -11,6 +11,20 @@ Red [
 	}
 ]
 
+print*: :print
+
+print-log: {}
+log?: false
+
+print: func [value /local line] [
+	if log? [
+		line: head append form reduce value newline
+		append print-log line
+		write %log.log print-log
+		print* value
+	]
+]
+
 ; ----------------------------------------------------------------------------
 ;		initialization
 ; ----------------------------------------------------------------------------
@@ -98,6 +112,7 @@ gritter: context [
 	user-id: none
 	room-id: none
 	room-ids: none
+	rooms: none
 	data-rooms: none
 	data-chat: none
 	messages: none
@@ -114,7 +129,7 @@ gritter: context [
 	sort-by-name: func ["Comparator for SORT" a b] [a/name < b/name]
 
 	init: func [
-		/local rooms chat
+		/local chat
 	] [
 		view/no-wait main-lay
 		info: gitter/user-info
@@ -171,7 +186,7 @@ gritter: context [
 		/force
 		/extern unread
 	] [
-	;	print "refresh"
+		print "refresh"
 		unread: gitter/list-unread user-id room-id
 		if any [
 			force
@@ -254,6 +269,7 @@ gritter: context [
 				below
 				base 0x3
 				list-rooms: text-list 190x200 data data-chat-rooms [
+					print "click in list-rooms"
 					list-users/selected: none
 					select-room pick face/data face/selected
 				]
@@ -262,6 +278,7 @@ gritter: context [
 				below
 				base 0x3
 				list-users: text-list 190x200 data data-user-rooms [
+					print "click in list-users"
 					list-rooms/selected: none
 					select-room pick face/data face/selected
 				]
@@ -334,7 +351,7 @@ gritter: context [
 		; color: average-color avatars/:name
 		size: either height < 50 [30x30] [50x50]
 		compose [
-			image (get avatar-path) (size) extra (name) [probe face/extra]
+			image (get avatar-path) (size) extra (name) [face/extra]
 		]
 	]
 
@@ -396,8 +413,9 @@ gritter: context [
 				extra (make object! [
 					id: message/id
 				])
-				on-up [(actors/get-link)]
-			do [(make set-path! reduce [name 'flags]) [Direct2D]]
+				on-up [actors/get-link]
+				on-over [actors/get-link]
+			do [(make set-path! reduce [name 'flags]) [Direct2D all-over]]
 		]
 		body/target: name
 		body/layout
@@ -433,21 +451,44 @@ gritter: context [
 		room "Room name"
 		/local value topic name info
 	] [
-		room: gitter/get-room room
+		print ["select-room" room]
+
+		room: select-by rooms 'name room
+
+		room: gitter/get-room remove room/url
+		print mold room
 		room-id: room/id
 		main-lay/text: rejoin ["Gritter: " value]
 
-		room-icon/image: load to url! room/avatarUrl ; TODO: cache room avatars (icons)
+		print "before image loading"
+
+		room-icon/image: if room/avatarUrl [
+			load to url! room/avatarUrl ; TODO: cache room avatars (icons)
+		]
+
+		print "after image loading"
 
 		name: make text-box! [size: 500x40 text: room/name font: fonts/room-name]
+
+		print "before layout"
+		unless name/text [name/text: "bla bla bla"]
+		print mold name
+
 		name/layout
+
+		print "after layout"
+
 	;	print ["name width: " name/width] 
 		topic: make text-box! [size: as-pair 500 - name/width 40 text: room/topic]
 
-		info-text: probe rejoin [
+		print "make info-text"
+
+		info-text: rejoin [
 			either room/oneToOne [""] [rejoin ["Users: " room/userCount]]
 			either empty? room/tags [""] [rejoin [", Tags: " room/tags]] ; TODO: clickable tags
 		]
+
+		print ["info-text:" mold info-text]
 
 		info: make text-box! [
 			size: 250x20 
@@ -455,17 +496,27 @@ gritter: context [
 			text: info-text
 		] 
 
+		print "compose"
+
 		room-topic/draw: compose [
 			text 0x0 (name) 
 			text (as-pair 10 + name/width 0) (topic)
 			text 10x33 (info)
 		]
+
+		print "show topic"
+
 		show room-topic
 
 	;	room-info/draw: compose [text 0x0 (draw-room-info room)]
 	;	show room-info
+
+		print "show main-lay"
 	
 		show main-lay
+
+		print "call refresh force"
+
 		refresh/force list-chat
 	]
 
@@ -473,11 +524,11 @@ gritter: context [
 		messages
 		/extern unread
 	] [
-	;	print "show messages"
+		print "show messages"
 		out: copy []
 		foreach message messages [
 
-			if code: get-code message [probe code]
+		;	if code: get-code message [probe code]
 
 			id: message/id
 			backdrop: either new?: to logic! find unread/chat id [200.250.200] [240.240.240]
@@ -494,6 +545,7 @@ gritter: context [
 				return
 			]
 		]
+		print "show messages after loop"
 		compose/deep [across space 0x0 panel (240.240.240) [(out)]]
 	]
 

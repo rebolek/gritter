@@ -235,8 +235,8 @@ emit-text-box: function [
 			set value url! (
 				link: value
 				append text value: take/last stack
-				repend links [position length? value link]
-				repend styles [position length? value 'underline 'bold 'font-name fonts/text/name 'font-size fonts/text/size]
+				repend links [position length? value link 1 + length? styles] ; text-position length value styles-position
+				repend styles [position length? value 0.50.20 'underline 'bold 'font-name fonts/text/name 'font-size fonts/text/size]
 				position: position + length? value
 		)
 		|	skip	
@@ -247,5 +247,6 @@ emit-text-box: function [
 		styles: [(styles)] 
 		size: (as-pair x-size 300) ; TODO: how to get max Y-SIZE ?
 		links: [(links)]
+		link: [active 10.150.120 inactive 0.50.20]
 	]
 ]
