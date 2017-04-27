@@ -200,6 +200,7 @@ gritter: context [
 			messages: gitter/get-messages room-id
 			face/pane: layout/tight/only show-messages messages
 			face/pane/1/offset/y: face/size/y - face/pane/1/size/y
+			print "refresh > show"
 			show face
 		] 
 	]
@@ -454,8 +455,8 @@ gritter: context [
 		print ["select-room" room]
 
 		room: select-by rooms 'name room
-
-		room: gitter/get-room remove room/url
+		if equal? #"/" first room/url [remove room/url]
+		room: gitter/get-room room/url
 		print mold room
 		room-id: room/id
 		main-lay/text: rejoin ["Gritter: " value]
@@ -546,7 +547,9 @@ gritter: context [
 			]
 		]
 		print "show messages after loop"
-		compose/deep [across space 0x0 panel (240.240.240) [(out)]]
+		out: compose/deep [across space 0x0 panel (240.240.240) [(out)]]
+	;	print mold out
+		out
 	]
 
 ]
