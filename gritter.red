@@ -433,6 +433,7 @@ gritter: context [
 							show face
 							face/extra/match-string: none
 							probe words-of face
+							return 'stop
 						] [
 							; more matches, rotate
 						]
