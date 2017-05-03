@@ -25,6 +25,30 @@ print: func [value /local line] [
 	]
 ]
 
+keep-all: function [
+	'word
+	series
+	body
+] [
+	collect [
+		foreach :word series [
+			do bind body :word
+		]
+	]
+]
+
+match: function [
+	"Match value in block"
+	series
+	value
+] [
+	collect [
+		foreach item series [
+			if equal? value copy/part item length? value [keep item]
+		]
+	]
+]
+
 ; ----------------------------------------------------------------------------
 ;		initialization
 ; ----------------------------------------------------------------------------
@@ -110,6 +134,7 @@ gritter: context [
 	; TODO: token here?
 	info: none
 	user-id: none
+	room: none
 	room-id: none
 	room-ids: none
 	rooms: none
@@ -216,6 +241,18 @@ gritter: context [
 	]
 
 	; FIXME: layout leaks face names (i.e.: list-rooms)
+
+	; --- LAYOUTS
+
+	idle-lay: layout/only [
+		text "Loading room..."
+	]
+
+; >> 600x370 - 94x24 / 2
+; == 253x173
+	
+	idle-lay/1/offset: 253x173 ; TODO: not hardcoded
+
 
 	main-lay: layout [
 		title "Gritter - A Red Gitter Client"
@@ -348,7 +385,7 @@ gritter: context [
 		]
 		panel [
 			room-icon: image 50x50
-			room-topic: base 550x50 240.240.240
+			room-topic: base 550x50 240.240.240 extra #()
 			return
 			list-chat: panel white 600x370 [] rate 1 ; now 
 				on-time [
@@ -363,11 +400,47 @@ gritter: context [
 			probe face/text
 		]
 		return
-		area-input: area 680x100
+		area-input: area 680x100 extra #(match-string: #[none] matches: #[none])
 			on-key [
-				if all [equal? #"^/" event/key event/ctrl?] [
-					send-message
+				probe reduce ["onkey" mold event/key]
+
+				case/all [
+					all [equal? #"^/" event/key event/ctrl?] [
+						send-message
+					]
+					equal? event/key #"^-" [
+						probe "TAB pressed"
+						; first tab press
+						unless probe face/extra/match-string [
+							probe "no match-string"
+							face/extra/match-string: probe next find/last face/text #"@"
+							probe room/userCount
+						]
+						; TODO: move this outside, should be cached
+						users: sort gitter/get-users room
+						users: collect [
+							foreach user users [
+								keep user/username
+							]
+						]
+						probe users
+						; ---
+						face/extra/matches: probe match users face/extra/match-string
+						either 1 = length? probe face/extra/matches [
+							; only one match, autocollect
+							change face/extra/match-string first face/extra/matches
+							probe face/text
+							show face
+							face/extra/match-string: none
+							probe words-of face
+						] [
+							; more matches, rotate
+						]
+					]
 				]
+
+
+
 			]
 		button "Send" [send-message]
 		button "Info" [
@@ -497,23 +570,26 @@ gritter: context [
 		room/name
 	]
 
-	get-room-id: function [
+	get-room-id: func [
 		"Return room-id from selection in list"
 		rooms
 		face
 	] [
-		value: pick face/data face/selected
+		room: pick face/data face/selected
 		room: select-by rooms 'name value
 		room/id
 	]
 
 	select-room: func [
-		room "Room name"
-		/local value topic name info
+		name "Room name"
+		/local value topic info
 	] [
-		print ["select-room" room]
+		print ["select-room" name]
 
-		room: select-by rooms 'name room
+		list-chat/pane: idle-lay
+		show list-chat 
+
+		room: select-by rooms 'name name
 		if equal? #"/" first room/url [remove room/url]
 		room: gitter/get-room room/url
 		print mold room
@@ -531,7 +607,7 @@ gritter: context [
 		name: make text-box! [size: 500x40 text: room/name font: fonts/room-name]
 
 		print "before layout"
-		unless name/text [name/text: "bla bla bla"]
+		unless name/text [name/text: "WARNING: No name present"]
 		print mold name
 
 		name/layout
@@ -549,7 +625,6 @@ gritter: context [
 		]
 
 		print ["info-text:" mold info-text]
-
 		info: make text-box! [
 			size: 250x20 
 			font: fonts/name
@@ -557,7 +632,6 @@ gritter: context [
 		] 
 
 		print "compose"
-
 		room-topic/draw: compose [
 			text 0x0 (name) 
 			text (as-pair 10 + name/width 0) (topic)
@@ -565,18 +639,15 @@ gritter: context [
 		]
 
 		print "show topic"
-
 		show room-topic
 
 	;	room-info/draw: compose [text 0x0 (draw-room-info room)]
 	;	show room-info
 
 		print "show main-lay"
-	
 		show main-lay
 
 		print "call refresh force"
-
 		refresh/force list-chat
 	]
 
