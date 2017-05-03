@@ -148,9 +148,13 @@ remove-room: function [
 	; TODO: needs DELETE method
 ]
 
-list-users: function [
+get-users: function [
 	room
+	/only	"TBD: List only first 30 users (default Gitter behaviour)"
+	/skip	"TBD: Skip COUNT users and get 30 users" 
+		count
 ] [
+	; TODO: gets only 30 users, 
 	room: get-id room
 	send [%rooms room %users]
 ]
