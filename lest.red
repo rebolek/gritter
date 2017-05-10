@@ -45,22 +45,26 @@ emit-text-box: function [
 	areas: copy [] ; TODO: CLEAR ?
 	links: copy []
 	position: 1
+	length: 0 ; last text length, set by ADD-TEXT, used by ADD-STYLE
 
-	add-text: func [value] [unless empty? value [append text value]]
+	add-text: func [value] [
+		length: length? value
+		unless empty? value [append text value]
+	]
 	add-style: func [value] [
-		append styles [(position) (length? value) (value)]
-		position: position + length? value
+		append styles probe compose [(position) (length) (value)]
+		position: position + length ; TODO: is this necessary?
 	]
 
 	parse data [
 		some [
 			set value string! (
 				add-text value
-				add-style ['font-name fonts/text/name 'font-size fonts/text/size]
+				add-style reduce ['font-name fonts/text/name 'font-size fonts/text/size]
 			)
 		|	'code set value string! (
 				add-text value
-				add-style ['font-name fonts/fixed/name 'font-size fonts/fixed/size]
+				add-style reduce ['font-name fonts/fixed/name 'font-size fonts/fixed/size]
 		)	
 		|	'bold set value string! (
 				add-text value
@@ -79,13 +83,13 @@ emit-text-box: function [
 				link: value
 				add-text value: take/last stack
 				repend links [position length? value link 1 + length? styles] ; text-position length value styles-position
-				add-style ['underline 'bold 'font-name fonts/text/name 'font-size fonts/text/size] ; FIXME: putting color here messes all styles
+				add-style reduce ['underline 'bold 'font-name fonts/text/name 'font-size fonts/text/size] ; FIXME: putting color here messes all styles
 		)
 		|	set value ['h1 | 'h2 | 'h3 | 'h4 | 'h5 | 'h6] (append stack value)
 			set value string! (
 				append value newline
 				add-text value
-				add-style ['font-size (select [h1 24 h2 22 h3 20 h4 28 h5 15 h6 12] take/last stack)] ; TODO: do not set just size, but whole style
+				add-style reduce ['font-size (select [h1 24 h2 22 h3 20 h4 28 h5 15 h6 12] take/last stack)] ; TODO: do not set just size, but whole style
 			)
 		|	skip	
 		]

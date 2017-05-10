@@ -47,7 +47,6 @@ marky-mark: func [
 	mark-stack: []
 
 	select-command: func [mark] [
-		print ["select-command from" mark]
 		case [
 			find ["**" "__"] mark ('bold)
 			find ["*" "_"] mark ('italic)
@@ -157,7 +156,6 @@ marky-mark: func [
 		copy value 
 		to newline
 		skip (
-			print ["heading level:" length? mark]
 			repend out [copy text to word! rejoin ['h length? mark] copy value]
 			clear text
 		)
