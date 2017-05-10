@@ -56,6 +56,7 @@ match: function [
 do %gitter-api.red
 do %gitter-tools.red
 do %rich-text.red
+do %lest.red
 do %marky-mark.red
 
 system/view/auto-sync?: false
