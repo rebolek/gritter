@@ -47,49 +47,45 @@ emit-text-box: function [
 	position: 1
 
 	add-text: func [value] [unless empty? value [append text value]]
+	add-style: func [value] [
+		append styles [(position) (length? value) (value)]
+		position: position + length? value
+	]
 
 	parse data [
 		some [
 			set value string! (
 				add-text value
-				repend styles [position length? value 'font-name fonts/text/name 'font-size fonts/text/size]
-				position: position + length? value
+				add-style ['font-name fonts/text/name 'font-size fonts/text/size]
 			)
 		|	'code set value string! (
 				add-text value
-				repend styles [position length? value 'font-name fonts/fixed/name 'font-size fonts/fixed/size]
-				position: position + length? value
+				add-style ['font-name fonts/fixed/name 'font-size fonts/fixed/size]
 		)	
 		|	'bold set value string! (
 				add-text value
-				repend styles [position length? value 'bold]
-				position: position + length? value
+				add-style 'bold
 		)
 		|	'italic set value string! (
 				add-text value
-				repend styles [position length? value 'italic]
-				position: position + length? value
+				add-style 'italic
 		)
 		|	'underline set value string! (
 				add-text value
-				repend styles [position length? value 'underline]
-				position: position + length? value
+				add-style 'underline
 		)
 		|	'link set value string! (append stack value)
 			set value url! (
 				link: value
 				add-text value: take/last stack
 				repend links [position length? value link 1 + length? styles] ; text-position length value styles-position
-				repend styles [position length? value 'underline 'bold 'font-name fonts/text/name 'font-size fonts/text/size] ; FIXME: putting color here messes all styles
-				position: position + length? value
+				add-style ['underline 'bold 'font-name fonts/text/name 'font-size fonts/text/size] ; FIXME: putting color here messes all styles
 		)
 		|	set value ['h1 | 'h2 | 'h3 | 'h4 | 'h5 | 'h6] (append stack value)
 			set value string! (
 				append value newline
 				add-text value
-				repend styles [position length? value 'font-size (select [h1 24 h2 22 h3 20 h4 28 h5 15 h6 12] take/last stack)] ; TODO: do not set just size, but whole style
-				position: position + length? value
-				print ["pos:" position "real" length? text]
+				add-style ['font-size (select [h1 24 h2 22 h3 20 h4 28 h5 15 h6 12] take/last stack)] ; TODO: do not set just size, but whole style
 			)
 		|	skip	
 		]
