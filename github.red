@@ -59,7 +59,7 @@ send: func [
 	header: [
 		Accept: "application/vnd.github.v3+json"
 	]
-	unless equal? 'GET type [
+	unless equal? 'GET req-type [
 		insert header [
 			Content-Type: "application/json"
 		]
