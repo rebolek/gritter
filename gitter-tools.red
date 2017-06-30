@@ -77,7 +77,10 @@ download-all-messages: func [
 	/to
 		filename
 ] [
-	unless to [filename: %messages.red]
+	unless exists? %messages/ [make-dir %messages/]
+	unless to [
+		filename: rejoin [%messages/ replace/all copy room/name #"/" #"-"]
+	]
 	ret: gitter/get-messages room
 	if only [foreach message ret [strip-message message]]
 	last-id: ret/1/id
