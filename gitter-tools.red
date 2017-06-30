@@ -29,33 +29,6 @@ list-rooms: function [
 	]
 ]
 
-get-all-messages: func [
-	room
-	/with messages
-	/local
-		ret last-id
-] [
-	either with [
-		ret: messages
-	] [
-		messages: make block! 10'000
-		ret: gitter/get-messages room
-	]
-	last-id: ret/1/id
-	insert messages ret
-	until [
-		ret: gitter/get-messages/with room [beforeId: last-id]
-		insert messages ret
-		save %messages.red messages
-		unless empty? ret [
-		;	print ret/1/sent
-			last-id: ret/1/id
-		]
-		empty? ret
-	]
-	ret
-]
-
 strip-message: function [
 	"Remove unnecessary informations from message"
 	message
