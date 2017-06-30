@@ -3,7 +3,7 @@ Red []
 do %gitter-api.red
 
 init-gitter: does [
-	do %options.red
+	do load %options.red
 	user: gitter/user-info
 	rooms: gitter/user-rooms user/id
 	room: select-room rooms "red/red" ; Remove later
