@@ -34,7 +34,7 @@ strip-message: function [
 	message
 ] [
 	message/html: none
-	message/author: message/fromUser/id
+	message/author: any [all [message/fromUser message/fromUser/id] author]
 	message/fromUser: none
 	message/mentions: none
 	message/urls: none
@@ -88,7 +88,7 @@ select-message: function [
 ; --- searching
 
 match-question: function [
-	"Return LOGIC! value indicating wether message contains question mark."
+	"Return LOGIC! value indicating whether message contains question mark."
 	message
 ] [
 	not not find message #"?"
