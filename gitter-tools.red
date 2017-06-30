@@ -79,9 +79,14 @@ download-all-messages: func [
 ] [
 	unless exists? %messages/ [make-dir %messages/]
 	unless to [
-		filename: rejoin [%messages/ replace/all copy room/name #"/" #"-"]
+		filename: rejoin [%messages/ replace/all copy room/name #"/" #"-" %.red]
 	]
 	ret: gitter/get-messages room
+	if empty? ret [
+		; the room is empty
+		write filename ""
+		return none
+	]
 	if only [foreach message ret [strip-message message]]
 	last-id: ret/1/id
 	write filename mold/only reverse ret
@@ -89,7 +94,6 @@ download-all-messages: func [
 		ret: gitter/get-messages/with room [beforeId: last-id]
 		if only [foreach message ret [strip-message message]]
 		unless empty? ret [
-		;	print ret/1/sent
 			last-id: ret/1/id
 			write/append filename mold/only reverse ret
 		]
