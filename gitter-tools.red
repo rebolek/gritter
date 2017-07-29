@@ -2,6 +2,18 @@ Red []
 
 do %gitter-api.red
 
+select-by: function [
+	"Select map! or object! in series by it's field"
+	series
+	word
+	value
+] [
+	foreach item series [
+		if equal? item/:word value [return item]
+	]
+	none
+]
+
 init-gitter: does [
 	do load %options.red
 	user: gitter/user-info
@@ -29,12 +41,16 @@ list-rooms: function [
 	]
 ]
 
+get-message-author: func [message][
+	any [all [message/fromUser message/fromUser/id] message/author]
+]
+
 strip-message: function [
 	"Remove unnecessary informations from message"
 	message
 ] [
 	message/html: none
-	message/author: any [all [message/fromUser message/fromUser/id] author]
+	message/author: get-message-author message
 	message/fromUser: none
 	message/mentions: none
 	message/urls: none
@@ -46,7 +62,7 @@ strip-message: function [
 
 download-all-messages: func [
 	room
-	/only "Remove some unnecessary fields"
+	/compact "Remove some unnecessary fields"
 	/to
 		filename
 ] [
@@ -60,12 +76,12 @@ download-all-messages: func [
 		write filename ""
 		return none
 	]
-	if only [foreach message ret [strip-message message]]
+	if compact [foreach message ret [strip-message message]]
 	last-id: ret/1/id
 	write filename mold/only reverse ret
 	until [
 		ret: gitter/get-messages/with room [beforeId: last-id]
-		if only [foreach message ret [strip-message message]]
+		if compact [foreach message ret [strip-message message]]
 		unless empty? ret [
 			last-id: ret/1/id
 			write/append filename mold/only reverse ret
@@ -122,6 +138,17 @@ get-all-code: function [
 	code
 ]
 
+gfind: func [
+	messages
+	string
+] [
+	result: copy []
+	foreach message messages [
+		if find message/text string [append result message]
+	]
+	result
+]
+
 ; ---
 
 stats: function [
@@ -156,7 +183,7 @@ probe-messages: function [
 	messages
 ] [
 	foreach message messages [
-		print rejoin [message/fromUser/username " (" message/sent ") wrote:"]
+		print rejoin [get-message-author message " (" message/sent ") wrote:"]
 		print "---------------------------------------------------------------"
 		print message/text
 		print "---------------------------------------------------------------"
