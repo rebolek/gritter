@@ -59,9 +59,10 @@ send: function [
 		put-data
 ] [
 	method: case [
-		post ['POST]
-		put  ['PUT]
-		true ['GET]
+		post   ['POST]
+		put    ['PUT]
+		delete ['DELETE]
+		true   ['GET]
 	]
 	link: make-url compose [https://api.gitter.im/v1/ (data)]
 	header: [
@@ -75,7 +76,7 @@ send: function [
 	ret/data
 ]
 
-; --- groups resource
+; --- groups resource --------------------------------------------------------
 
 list-groups: does [
 	send %groups
@@ -107,7 +108,6 @@ join-room: function [
 	room ""
 	/by-id "Room arg is id instead of name"
 ] [
-	; TODO: use get-id here
 	user: get-id user
 	unless by-id [room: select get-room-info room 'id]
 	send/post [%user user %rooms] [id: room]
@@ -117,10 +117,9 @@ remove-user: function [
 	user
 	room
 ] [
-	; TODO: needs DELETE method
+	send/delete [%rooms room %users user]
 ]
 
-; TODO: needs PUT method
 update-topic: function [
 	room
 	topic
@@ -128,7 +127,6 @@ update-topic: function [
 	send/put [%rooms room] [topic: topic]
 ]
 
-; TODO: needs PUT method
 room-tags: function [
 	room
 	tags [string! issue! block!]
@@ -145,7 +143,7 @@ room-tags: function [
 remove-room: function [
 	room
 ] [
-	; TODO: needs DELETE method
+	send/delete [%rooms room]
 ]
 
 list-users: function [
