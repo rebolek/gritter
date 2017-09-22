@@ -57,6 +57,7 @@ send: function [
 		post-data
 	/put
 		put-data
+	/delete
 ] [
 	method: case [
 		post   ['POST]
@@ -239,6 +240,6 @@ list-channels: function [
 	; TODO
 ]
 
-; --- end of Gritter context
+; --- end of Gitter context
 
 ]
