@@ -118,7 +118,8 @@ user-rooms: function [
 get-room-info: function [
 	room "Room name"
 ] [
-	send/post %rooms [uri: room]
+	res: send/post %rooms [uri: room]
+	if res/error [cause-error 'user 'message [rejoin ["error getting room '" room "': ^"" res/error "^""]]]
 ]
 
 join-room: function [
