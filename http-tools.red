@@ -235,7 +235,7 @@ mime-decoder: function [
 	string
 	type
 ] [
-	switch probe type [
+	switch type [
 		"application/json" [json/decode string]
 		"application/x-www-form-urlencoded" [www-form/decode string]
 		"text/html" [string]
