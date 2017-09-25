@@ -66,11 +66,12 @@ download-all-messages: func [
 	/to
 		filename
 ] [
+	if path? room [room: gitter/get-room-info room]
 	unless exists? %messages/ [make-dir %messages/]
 	unless to [
 		filename: rejoin [%messages/ replace/all copy room/name #"/" #"-" %.red]
 	]
-	ret: gitter/get-messages room
+		ret: gitter/get-messages room
 	if empty? ret [
 		; the room is empty
 		write filename ""

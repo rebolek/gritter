@@ -57,6 +57,7 @@ send: function [
 		post-data
 	/put
 		put-data
+	/delete
 ] [
 	method: case [
 		post   ['POST]
@@ -71,8 +72,25 @@ send: function [
 	if any [post put] [
 		insert header [Content-Type: "application/json"]
 		post-data: json/encode map any [post-data put-data]
-	] 
+	]
+	if all [
+		value? 'remaining-requests
+		value? 'next-reset
+		remaining-requests < 2
+		0 < till-reset: next-reset - (to-integer now/precise)
+	][
+		print ["rate limit reached. waiting" till-reset "seconds..."]
+		wait till-reset
+	]
 	ret: send-request/data/with/auth link method post-data header 'Bearer token
+	if ret/headers/X-RateLimit-Remaining [
+		set 'remaining-requests to-integer ret/headers/X-RateLimit-Remaining
+	]
+	if ret/headers/X-RateLimit-Reset [
+		ts: copy ret/headers/X-RateLimit-Reset
+		set 'next-reset to-float rejoin [take/part ts 10 "." ts]
+	]
+	;probe rejoin ["remaining: " remaining-requests " next reset:" next-reset - (to-integer now/precise)]
 	ret/data
 ]
 
@@ -100,7 +118,8 @@ user-rooms: function [
 get-room-info: function [
 	room "Room name"
 ] [
-	send/post %rooms [uri: room]
+	res: send/post %rooms [uri: room]
+	if res/error [cause-error 'user 'message [rejoin ["error getting room '" room "': ^"" res/error "^""]]]
 ]
 
 join-room: function [
@@ -239,6 +258,6 @@ list-channels: function [
 	; TODO
 ]
 
-; --- end of Gritter context
+; --- end of Gitter context
 
 ]
