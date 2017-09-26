@@ -26,3 +26,7 @@ So the data flow is like this:
 ```
 
 Of course it would be possible to generate the Draw dialect directly from Markdown, but the code would be ugly and not reusable. Lest and RTD are powerful tools that have their use outside of Gitter.
+
+## Gitter Tools
+
+Gritter also provides various tools for working with Gitter, downloading whole rooms and searching.
