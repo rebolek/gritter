@@ -71,7 +71,7 @@ download-all-messages: func [
 	unless to [
 		filename: rejoin [%messages/ replace/all copy room/name #"/" #"-" %.red]
 	]
-		ret: gitter/get-messages room
+	ret: gitter/get-messages room
 	if empty? ret [
 		; the room is empty
 		write filename ""
