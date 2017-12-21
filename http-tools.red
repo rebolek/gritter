@@ -253,7 +253,7 @@ www-form: object [
 				] 
 			]
 		] make string! 1000
-		cut-tail/part output either with [length? form last pattern] [2]
+		cut-tail/part output either only [length? form last pattern] [2]
 	]
 	decode: function [
 		string
@@ -313,7 +313,7 @@ percent: context [
 				some [
 					keep some chars
 				|	space keep #"+"	
-				|	set value skip keep (head insert for %"%")
+				|	set value skip keep (head insert enbase/base form value 16 "%")
 				]
 			]
 		] ""
