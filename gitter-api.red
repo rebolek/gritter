@@ -183,7 +183,10 @@ get-messages: function [
 	room: get-id room
 	data: copy [%rooms room %chatMessages]
 	if with [append/only data values]
-	send data
+	; Do date conversion. TODO: avatarUrl conversion (would probably need some checks)
+	messages: send data
+	foreach message messages [message/sent: load message/sent]
+	messages
 ]
 
 get-message: function [

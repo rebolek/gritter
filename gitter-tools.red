@@ -156,12 +156,17 @@ stats: function [
 	messages
 ] [
 	users: #()
+	template: #(
+		posts: 0
+		total-chars: 0
+	)
 	foreach message messages [
 		user: message/fromUser/username
 		unless users/:user [
-			users/:user: 0
+			users/:user: copy template 
 		]
-		users/:user: users/:user + 1
+		users/:user/posts: users/:user/posts + 1
+		users/:user/total-chars: users/:user/total-chars + length? message/text
 	]
 	users
 ]
