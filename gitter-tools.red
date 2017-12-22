@@ -159,14 +159,16 @@ stats: function [
 	template: #(
 		posts: 0
 		total-chars: 0
+		messages: []
 	)
 	foreach message messages [
 		user: message/fromUser/username
 		unless users/:user [
-			users/:user: copy template 
+			users/:user: copy/deep template 
 		]
 		users/:user/posts: users/:user/posts + 1
 		users/:user/total-chars: users/:user/total-chars + length? message/text
+		append users/:user/messages message
 	]
 	users
 ]
