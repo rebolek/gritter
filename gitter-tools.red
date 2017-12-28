@@ -61,7 +61,7 @@ strip-message: function [
 ]
 
 ; TODO: split this in multiple functions
-download-all-messages: func [
+download-room: func [
 	room
 	/compact "Remove some unnecessary fields"
 	/force "Do not use cached messages and re-download everything"
