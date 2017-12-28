@@ -96,7 +96,7 @@ send: function [
 
 ; --- groups resource --------------------------------------------------------
 
-list-groups: does [
+get-groups: does [
 	send %groups
 ]
 
@@ -166,7 +166,7 @@ remove-room: function [
 	send/delete [%rooms room]
 ]
 
-list-users: function [
+get-users: function [
 	room
 ] [
 	room: get-id room
@@ -219,7 +219,7 @@ update-message: function [
 user-info: does [first send %user]
 
 ; TODO: make part of get-messages?
-list-unread: function [
+get-unread: function [
 	user
 	room
 ] [
@@ -241,21 +241,21 @@ mark-as-read: function [
 	]
 ]
 
-list-orgs: function [
+get-orgs: function [
 	user
 ] [
 	user: get-id user
 	send [%user user %orgs]
 ]
 
-list-repos: function [
+get-repos: function [
 	user
 ] [
 	user: get-id user
 	send [%user user %repos]
 ]
 
-list-channels: function [
+get-channels: function [
 	user
 ] [
 	user: get-id user
