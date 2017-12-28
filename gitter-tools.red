@@ -60,34 +60,80 @@ strip-message: function [
 	message/meta: none
 ]
 
+; TODO: split this in multiple functions
 download-all-messages: func [
 	room
 	/compact "Remove some unnecessary fields"
+	/force "Do not use cached messages and re-download everything"
+	/verbose "Inform what is going on"
 	/to
 		filename
+	/with
+		cache [block!] "If we have messages in memory, we can save lot of time"
+	/local info ret last-id newest messages
 ] [
+	; some preparation
+	info: func [value] [if verbose [print value]]
 	if path? room [room: gitter/get-room-info room]
 	unless exists? %messages/ [make-dir %messages/]
 	unless to [
 		filename: rejoin [%messages/ replace/all copy room/name #"/" #"-" %.red]
 	]
-	ret: gitter/get-messages room
-	if empty? ret [
-		; the room is empty
-		write filename ""
-		return none
-	]
-	if compact [foreach message ret [strip-message message]]
-	last-id: ret/1/id
-	write filename mold/only reverse ret
-	until [
-		ret: gitter/get-messages/with room [beforeId: last-id]
-		if compact [foreach message ret [strip-message message]]
-		unless empty? ret [
-			last-id: ret/1/id
-			write/append filename mold/only reverse ret
+	; load cached messages, when required
+	either with [
+		ret: cache
+	][
+		if all [not force exists? filename] [
+			info ["Loading file" filename "..."]
+			ret: load filename
+			info ["File" filename "loaded"]
 		]
-		empty? ret
+	]
+	
+	ret: either empty? ret [
+		info "Downloading all messages"
+		; we have no messages, so we will downloaded them
+		; from newest to oldest (that's how Gitter works)
+
+		; load first bunch of messages
+		ret: gitter/get-messages room
+		if empty? ret [
+			; the room is empty
+			write filename ""
+			return none
+		]
+		if compact [foreach message ret [strip-message message]]
+		last-id: ret/1/id
+		write filename mold/only reverse ret
+		until [
+			info ["Downloading messages before" ret/1/sent]
+			ret: gitter/get-messages/with room [beforeId: last-id]
+			if compact [foreach message ret [strip-message message]]
+			unless empty? ret [
+				last-id: ret/1/id
+				write/append filename mold/only reverse ret
+			]
+			empty? ret
+		]
+		ret
+	] [
+		; we have cached messages, so we will download only newer messages
+
+		; now we will download messages in loop until we have all new messages
+		until [
+			info ["Downloading messages posted after" ret/1/sent]
+			; NOTE: [afterId] returns messages from oldest to newest, so we need
+			;		to reverse the order, to have same format as cached messages
+			messages: reverse gitter/get-messages/with 
+				room 
+				compose [afterId: (ret/1/id)]
+			if compact [foreach message ret [strip-message message]]
+			insert ret messages ; we may be inserting empty block, but who cares
+			empty? messages
+		]
+		; now save everything (there's no write/insert do do it in loop)
+		save filename ret
+		ret
 	]
 ]
 
