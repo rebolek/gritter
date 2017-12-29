@@ -2,6 +2,17 @@ Red []
 
 do %gitter-api.red
 
+fix-mold: func [value][
+	forall value [
+		replace/all value/1/text #"{" "^{"
+		replace/all value/1/text #"}" "^}"
+
+		replace/all value/1/html #"{" "^{"
+		replace/all value/1/html #"}" "^}"
+	]
+	value
+]
+
 select-by: function [
 	"Select map! or object! in series by it's field"
 	series
@@ -62,7 +73,7 @@ strip-message: function [
 
 ; TODO: split this in multiple functions
 download-room: func [
-	room
+	room ; TODO support ID here and better conversion of different types
 	/compact "Remove some unnecessary fields"
 	/force "Do not use cached messages and re-download everything"
 	/verbose "Inform what is going on"
@@ -70,7 +81,7 @@ download-room: func [
 		filename
 	/with
 		cache [block!] "If we have messages in memory, we can save lot of time"
-	/local info ret last-id newest messages
+	/local info ret last-id newest messages t
 ] [
 	; some preparation
 	info: func [value] [if verbose [print value]]
@@ -79,14 +90,17 @@ download-room: func [
 	unless to [
 		filename: rejoin [%messages/ replace/all copy room/name #"/" #"-" %.red]
 	]
+	info ["^/Download messages for room" room/name]
 	; load cached messages, when required
 	either with [
 		ret: cache
 	][
+		info ["Checking cached file" filename]
 		if all [not force exists? filename] [
+			t: now/time/precise
 			info ["Loading file" filename "..."]
 			ret: load filename
-			info ["File" filename "loaded"]
+			info ["File" filename "with" length? ret " messages was loaded in" now/time/precise - t]
 		]
 	]
 	
@@ -104,14 +118,20 @@ download-room: func [
 		]
 		if compact [foreach message ret [strip-message message]]
 		last-id: ret/1/id
-		write filename mold/only reverse ret
+		; FIXME: This is workaround for missing MOLD/ALL
+		;		"{" and "}" are not escaped and can't be loaded back
+		;		so we're going to escape them manually
+		ret: reverse ret
+
+		write filename mold/only ret
 		until [
 			info ["Downloading messages before" ret/1/sent]
 			ret: gitter/get-messages/with room [beforeId: last-id]
+			info ["Downloaded" length? ret "messages."]
 			if compact [foreach message ret [strip-message message]]
 			unless empty? ret [
 				last-id: ret/1/id
-				write/append filename mold/only reverse ret
+				write/append filename fix-mold mold/only reverse ret
 			]
 			empty? ret
 		]
@@ -127,12 +147,14 @@ download-room: func [
 			messages: reverse gitter/get-messages/with 
 				room 
 				compose [afterId: (ret/1/id)]
+			info ["Downloaded" length? messages "messages."]				
 			if compact [foreach message ret [strip-message message]]
 			insert ret messages ; we may be inserting empty block, but who cares
 			empty? messages
 		]
 		; now save everything (there's no write/insert do do it in loop)
-		save filename ret
+		ret: fix-mold mold ret
+		write filename ret
 		ret
 	]
 ]
@@ -198,7 +220,7 @@ gfind: func [
 
 ; ---
 
-stats: function [
+get-user-messages: function [
 	messages
 ] [
 	users: #()
