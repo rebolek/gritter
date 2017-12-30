@@ -1,7 +1,16 @@
-Red[]
+Red[
+	Title: "Gitter statistics"
+	Author: "Boleslav Březovský"
+	Notes: {
+Defines ROOMS and MESSAGES in global context (would be moved to stats context later).
+ROOMS is rooms metadata.
+MESSAGES is map of room messages with room id as key.
+}
+]
 
 do %../red-tools/csv.red
 do %gitter-tools.red
+do %options.red
 
 ; todo add order, do all in refirements
 sort-by-value: func [this that][this/2 > that/2]
@@ -30,10 +39,10 @@ init-rooms: func [
 	unless value? 'rooms [
 		print "Loading..."
 		room-files: read %messages/
-		rooms: #()
+		messages: #()
 	 	foreach room room-files [
-			room-name: probe to word! form first split room #"."
-			rooms/:room-name: load rejoin [%messages/ room] 
+			room-id: probe form first split room #"."
+			messages/:room-id: load rejoin [%messages/ room] 
 		]
 	]
 ]
@@ -49,9 +58,9 @@ get-message-count: func [
 ][
 	print "Get messages"
 	msg-count: []
-	foreach room words-of rooms [
+	foreach room words-of messages [
 		; TODO: last split.. will produce just "datatype" from "red-red-map-datatype"
-		repend/only msg-count [get-name room length? rooms/:room]
+		repend/only msg-count [get-name room length? messages/:room]
 	]
 	sort/compare msg-count :sort-by-value
 	remove-each value msg-count [zero? value/2]
@@ -59,14 +68,13 @@ get-message-count: func [
 	write %stats/msg-count.csv csv/encode msg-count
 ]
 
-
-
 init-users: func [
 	/local name
 ][
+	print "Init users"
 	users: #()
-	foreach room words-of rooms [
-		foreach message rooms/:room [
+	foreach room words-of messages [
+		foreach message messages/:room [
 			name: message/fromUser/username
 			unless users/:name [users/:name: copy []]
 			append users/:name message
@@ -74,7 +82,6 @@ init-users: func [
 	]
 	users
 ]
-
 
 ; -- stats for users
 
@@ -102,14 +109,39 @@ fix-missing-dates: func [
 	data
 ]
 
+select-room: func [
+	rooms
+	name
+	/id "Select by ID instead of name"
+][
+	foreach room rooms [
+		if any [
+		;	equal? room
+		][
+
+		]
+	]
+]
+
 get-dates: func [
-	name ; in "red-red" format instead of "red/red" (should fix in loader/saver)
-	room
-	/local date dates
+	"We expect that messages are in disk cache"
+	name "Room name , i.e.: red/red"
+	; TODO: support passing in-memory cache
+	/with
+		data "TODO: Not implemented"
+;	/local date dates msgs room
 ][
 	print ["Get usage for" name]
 	dates: copy #()
-	foreach message room [
+	msgs: any [
+		attempt [
+			room: gitter/get-room-info name
+			select messages room/id
+		]
+		select users form name
+	]
+	print ["Room/user" name "has" length? msgs "messages."]
+	foreach message msgs [
 		date: message/sent/date
 		unless dates/:date [dates/:date: 0]
 		dates/:date: dates/:date + 1
@@ -126,7 +158,7 @@ get-dates: func [
 	moving-average dates 7
 
 	insert/only dates ["date" "count"]
-	write rejoin [%stats/ name %-dates.csv] csv/encode dates
+	write rejoin [%stats/ room/id %-dates.csv] csv/encode dates
 	dates
 ]
 
@@ -149,14 +181,34 @@ moving-average: func [
 	data
 ]
 
+; --- get funcs
+
+get-data: func [
+	"Download and/or update rooms"
+	/local groups group-id rooms 
+][
+	groups: gitter/get-groups
+	group-id: groups/8/id
+	rooms: gitter/group-rooms group-id
+	foreach room rooms [
+		if room/public [download-room/verbose to path! room/name]
+	]
+]
+
+get-stats: func [
+	"Generate stats CSV files"
+][
+	print "Starting..."
+	init-rooms
+	init-users
+	get-message-count
+
+	get-dates 'red/red
+	get-dates 'rebolek
+]
+
+
 ; main code
 
-print "Starting..."
-init-rooms
-init-users
-get-message-count
-
-room: 'red-red
-get-dates room select rooms room
-user: "rebolek"
-get-dates user select users user
+; get-data ; downloads new messages
+get-stats

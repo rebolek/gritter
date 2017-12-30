@@ -2,15 +2,19 @@ Red []
 
 do %gitter-api.red
 
-fix-mold: func [value][
-	forall value [
-		replace/all value/1/text #"{" "^{"
-		replace/all value/1/text #"}" "^}"
-
-		replace/all value/1/html #"{" "^{"
-		replace/all value/1/html #"}" "^}"
-	]
+fix-mold: func [
+	"Do some changes to texts in messages block, so mold wouldn't produce garbage"
 	value
+	/only
+][
+	forall value [
+		replace/all value/1/text #"{" "^^{"
+		replace/all value/1/text #"}" "^^}"
+
+		replace/all value/1/html #"{" "^^{"
+		replace/all value/1/html #"}" "^^}"
+	]
+	either only [mold/only value][mold value]
 ]
 
 select-by: function [
@@ -83,12 +87,13 @@ download-room: func [
 		cache [block!] "If we have messages in memory, we can save lot of time"
 	/local info ret last-id newest messages t
 ] [
+	ret: copy []
 	; some preparation
 	info: func [value] [if verbose [print value]]
 	if path? room [room: gitter/get-room-info room]
 	unless exists? %messages/ [make-dir %messages/]
 	unless to [
-		filename: rejoin [%messages/ replace/all copy room/name #"/" #"-" %.red]
+		filename: rejoin [%messages/ room/id %.red]
 	]
 	info ["^/Download messages for room" room/name]
 	; load cached messages, when required
@@ -100,11 +105,11 @@ download-room: func [
 			t: now/time/precise
 			info ["Loading file" filename "..."]
 			ret: load filename
-			info ["File" filename "with" length? ret " messages was loaded in" now/time/precise - t]
+			info ["File" filename "with" length? ret "messages was loaded in" now/time/precise - t]
 		]
 	]
 	
-	ret: either empty? ret [
+	either empty? ret [
 		info "Downloading all messages"
 		; we have no messages, so we will downloaded them
 		; from newest to oldest (that's how Gitter works)
@@ -118,10 +123,6 @@ download-room: func [
 		]
 		if compact [foreach message ret [strip-message message]]
 		last-id: ret/1/id
-		; FIXME: This is workaround for missing MOLD/ALL
-		;		"{" and "}" are not escaped and can't be loaded back
-		;		so we're going to escape them manually
-		ret: reverse ret
 
 		write filename mold/only ret
 		until [
@@ -131,7 +132,11 @@ download-room: func [
 			if compact [foreach message ret [strip-message message]]
 			unless empty? ret [
 				last-id: ret/1/id
-				write/append filename fix-mold mold/only reverse ret
+		; FIXME: This is workaround for missing MOLD/ALL
+		;		"{" and "}" are not escaped and can't be loaded back
+		;		so we're going to escape them manually
+				write/append filename mold/only reverse ret
+				ret: reverse ret
 			]
 			empty? ret
 		]
@@ -153,8 +158,7 @@ download-room: func [
 			empty? messages
 		]
 		; now save everything (there's no write/insert do do it in loop)
-		ret: fix-mold mold ret
-		write filename ret
+		write filename mold ret
 		ret
 	]
 ]
@@ -253,6 +257,19 @@ maximum-of: function [
 		]
 	]
 	at series pos
+]
+
+red-group-id: "57542d9cc43b8c601977e621"
+get-rooms: func [
+	"Save room info on disk for later usage"
+	group
+	/local rooms
+][
+	rooms: gitter/group-rooms group
+	unless exists? %rooms/ [make-dir %rooms/]
+	foreach room rooms [
+		save rejoin [%rooms/ room/id %.red] room
+	]
 ]
 
 probe-messages: function [
