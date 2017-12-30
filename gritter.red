@@ -137,7 +137,7 @@ gritter: context [
 		face
 		/force
 	] [
-		unread: gitter/list-unread user-id room-id
+		unread: gitter/get-unread user-id room-id
 		if any [
 			force
 			all [
