@@ -29,7 +29,6 @@ circular!: object [
 	]
 
 	on-deep-change*: function [owner word target action new index part][
-		print mold action
 		switch action [
 			insert [
 				remove target
@@ -208,7 +207,11 @@ get-dates: func [
 	]
 	sort/compare dates :sort-by-key
 ; smooth data
-	moving-average dates 7
+	smoothed: moving-average dates 7
+	forall dates [
+		index: index? dates
+		dates/1/2: smoothed/:index
+	]
 
 	insert/only dates ["date" "count"]
 	write probe rejoin [%stats/data/ filename %-dates.csv] csv/encode dates
@@ -243,20 +246,41 @@ sum: func [
 ]
 
 moving-average: func [
-	"Naive implementation [modifies]"
+	"Naive implementation"
 	data "In form of [[key value][key value]...]"
 	size "Filter size"
 ][
-	buffer: make circular!
+	buffer: make circular! []
 	buffer/init size
 	collect [
 		forall data [
-			append buffer/list data/1
+			append buffer/list data/1/2 ; data/1/2 because we expect data be in [key value][key value]... format
 			keep (sum buffer/list) / size
 		]
 	]
-	data
 ]
+
+count-qaa: func [
+	"Count questions and answers (requires `rooms`)"
+][
+	questions: copy []
+	foreach room words-of rooms [
+		messages: rooms/:room
+		forall messages [
+			if match-question messages/1 [
+				answer: find-answer messages/1 copy part next messages 50
+			]
+		]
+	]
+]
+
+find-answer: func [
+	question
+	messages
+][
+
+]
+
 ; --- get funcs
 
 get-data: func [

@@ -176,11 +176,25 @@ select-message: function [
 
 ; --- searching
 
-match-question: function [
+match-question: function [ ; TODO: rename to `question?`
 	"Return LOGIC! value indicating whether message contains question mark."
 	message
 ] [
 	not not find message #"?"
+]
+
+get-mentions: function [
+	message
+][
+	name: none
+	mentions: copy []
+	parse message/text [
+		some [
+			"@" copy name to space (append mentions name)
+		|	skip	
+		]
+	]
+	mentions
 ]
 
 get-code: function [
