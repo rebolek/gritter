@@ -119,7 +119,7 @@ get-room-info: function [
 	room "Room name"
 ] [
 	res: send/post %rooms [uri: room]
-	if res/error [cause-error 'user 'message [rejoin ["error getting room '" room "': ^"" res/error "^""]]]
+	if res/error [cause-error 'user 'message [rejoin ["error getting room '" room "': ^"" copy/part res/error 80 "^""]]]
 	res
 ]
 

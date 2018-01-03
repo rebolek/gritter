@@ -6,11 +6,37 @@ Defines ROOMS and MESSAGES in global context (would be moved to stats context la
 ROOMS is rooms metadata.
 MESSAGES is map of room messages with room id as key.
 }
+	To-Do: [
+		"MESSAGES should be ROOM-MESSAGES and USERS should be USER-MESSAGES"
+	]
 ]
 
 do %../red-tools/csv.red
 do %gitter-tools.red
 do %options.red
+
+
+circular!: object [
+	size: 5
+	list: []
+
+	init: func [
+		siz
+	] [
+		size: siz
+		clear list
+		insert/dup list 0 1 + size
+	]
+
+	on-deep-change*: function [owner word target action new index part][
+		print mold action
+		switch action [
+			insert [
+				remove target
+			]
+		]
+	]
+]
 
 ; todo add order, do all in refirements
 sort-by-value: func [this that][this/2 > that/2]
@@ -36,14 +62,14 @@ init-rooms: func [
 	/local room-files
 ] [
 	print "Init rooms"
-	unless value? 'rooms [
-		print "Loading..."
-		room-files: read %messages/
-		messages: #()
-	 	foreach room room-files [
-			room-id: probe form first split room #"."
-			messages/:room-id: load rejoin [%messages/ room] 
-		]
+	print "Loading..."
+	room-files: read %messages/
+	rooms: #()
+	messages: #()
+	foreach room room-files [
+		room-id: probe form first split room #"."
+		rooms/:room-id: load rejoin [%rooms/ room-id %.red]
+		messages/:room-id: load rejoin [%messages/ room] 
 	]
 ]
 get-name: func [value][
@@ -54,18 +80,30 @@ get-name: func [value][
 ]
 ; message count for each room
 get-message-count: func [
+	;TODO: pass room name here as arg
 ;	/local msg-count
 ][
 	print "Get messages"
-	msg-count: []
+	msg-count: copy []
+	names: copy []
 	foreach room words-of messages [
+	;	room-info: gitter/get-room-info room 
+		room-info: select rooms room
 		; TODO: last split.. will produce just "datatype" from "red-red-map-datatype"
-		repend/only msg-count [get-name room length? messages/:room]
+		name: last split room-info/name #"/"
+		name: first split name #"-"
+		repend/only names [name room-info/id]
+		if get room-info/public [ ; FIXME: TRUE/FALSE here are WORD!, not LOGIC!
+			print [room-info/name room-info/public]
+			repend/only msg-count [name length? messages/:room]
+		]
 	]
 	sort/compare msg-count :sort-by-value
 	remove-each value msg-count [zero? value/2]
 	insert/only msg-count [name count]
-	write %stats/msg-count.csv csv/encode msg-count
+	write %stats/data/msg-count.csv csv/encode msg-count
+	insert/only names [name file]
+	write %stats/data/names.csv csv/encode names
 ]
 
 init-users: func [
@@ -85,13 +123,23 @@ init-users: func [
 
 ; -- stats for users
 
-get-top10-users: func [
-	/local top
+get-top-users: func [
+	/local top-messages
 ][
-	top: sort/compare collect [
+	; get top20 users by messags
+	top-messages: sort/compare collect [
 		foreach user words-of users [keep/only reduce [user length? users/:user]]
 	] :sort-by-value
-	write %stats/top20.csv csv/encode head insert/only copy/part top 20 ["name" "count"] 
+	write %stats/data/top20-messages.csv csv/encode head insert/only copy/part top-messages 20 ["name" "count"] 
+	top-chars: sort/compare collect [
+		foreach user words-of users [
+			count: 0
+			foreach m users/:user [count: count + length? m/text]
+			keep/only reduce [user count]
+		]
+	] :sort-by-value
+	write %stats/data/top20-chars.csv csv/encode head insert/only copy/part top-chars 20 ["name" "count"] 
+	
 ]
 
 fix-missing-dates: func [
@@ -140,6 +188,11 @@ get-dates: func [
 		]
 		select users form name
 	]
+	if empty? msgs [return none]
+	filename: any [
+		room/id
+		name
+	]
 	print ["Room/user" name "has" length? msgs "messages."]
 	foreach message msgs [
 		date: message/sent/date
@@ -158,11 +211,11 @@ get-dates: func [
 	moving-average dates 7
 
 	insert/only dates ["date" "count"]
-	write rejoin [%stats/ room/id %-dates.csv] csv/encode dates
+	write probe rejoin [%stats/data/ filename %-dates.csv] csv/encode dates
 	dates
 ]
 
-moving-average: func [
+old-moving-average: func [
 	"Naive implementation [modifies]"
 	data "In form of [[key value][key value]...]"
 	size "Filter size"
@@ -181,6 +234,29 @@ moving-average: func [
 	data
 ]
 
+sum: func [
+	block
+][
+	total: 0.0
+	forall block [total: total + block/1]
+	total
+]
+
+moving-average: func [
+	"Naive implementation [modifies]"
+	data "In form of [[key value][key value]...]"
+	size "Filter size"
+][
+	buffer: make circular!
+	buffer/init size
+	collect [
+		forall data [
+			append buffer/list data/1
+			keep (sum buffer/list) / size
+		]
+	]
+	data
+]
 ; --- get funcs
 
 get-data: func [
@@ -203,12 +279,16 @@ get-stats: func [
 	init-users
 	get-message-count
 
-	get-dates 'red/red
-	get-dates 'rebolek
+	foreach room words-of rooms [
+		get-dates rooms/:room/name
+
+	]
+	get-top-users
+;	get-dates 'rebolek
 ]
 
 
 ; main code
 
 ; get-data ; downloads new messages
-get-stats
+; get-stats ; create csv files for web
