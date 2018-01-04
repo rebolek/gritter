@@ -8,6 +8,7 @@ MESSAGES is map of room messages with room id as key.
 }
 	To-Do: [
 		"MESSAGES should be ROOM-MESSAGES and USERS should be USER-MESSAGES"
+		"and ALL-MESSAGES should be MESSAGES"
 		{
 			Room stats:
 				room created on
@@ -79,10 +80,12 @@ init-rooms: func [
 	room-files: read %messages/
 	rooms: #()
 	messages: #()
+	all-messages: make hash! 50'000
 	foreach room room-files [
 		room-id: probe form first split room #"."
 		rooms/:room-id: load rejoin [%rooms/ room-id %.red]
-		messages/:room-id: load rejoin [%messages/ room] 
+		messages/:room-id: load rejoin [%messages/ room]
+		foreach message messages/:room-id [append all-messages message]  
 	]
 ]
 get-name: func [value][
