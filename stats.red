@@ -136,6 +136,40 @@ init-users: func [
 
 ; -- stats for users
 
+get-user-info: func [
+	name
+	/local messages comparator days rooms
+][
+{
+	Users stats:
+		first message
+		total messages
+		top day
+		top rooms (absolute/percentage)
+}
+	messages: select users name
+	comparator: func [this that][this/sent < that/sent]
+	sort/compare messages :comparator
+
+	days: #()
+	rooms: #()
+
+	foreach message messages [
+		day: message/sent/date
+		either days/:day [
+			days/:day: days/:day + 1
+		][
+			days/:day: 0
+		]
+	]
+
+	user-stats: context compose [
+		first: (messages/1/sent)
+		total: (length? messages)
+		days: (sort/skip/compare/reverse days 2 2) ; NOTE: use map! here?
+	]
+]
+
 get-top-users: func [
 	/local top-messages
 ][
@@ -317,8 +351,10 @@ get-data: func [
 	groups: gitter/get-groups
 	group-id: groups/8/id
 	rooms: gitter/group-rooms group-id
+	unless exists? %rooms/ [make-dir %rooms/]
 	foreach room rooms [
 		if room/public [download-room/verbose to path! room/name]
+		save rejoin [%rooms/ room/id %.red] room
 	]
 ]
 
@@ -328,6 +364,10 @@ get-stats: func [
 	print "Starting..."
 	init-rooms
 	init-users
+	unless exists? %stats/data/ [
+		make-dir %stats/
+		make-dir %stats/data/ ; TODO: can be it be done in one pass? 
+	]
 	get-message-count
 
 	foreach room words-of rooms [
