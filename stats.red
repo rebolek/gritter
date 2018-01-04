@@ -8,6 +8,20 @@ MESSAGES is map of room messages with room id as key.
 }
 	To-Do: [
 		"MESSAGES should be ROOM-MESSAGES and USERS should be USER-MESSAGES"
+		{
+			Room stats:
+				room created on
+				total messages
+				top day
+				top posters (should change top20 graph)
+		}
+		{
+			Users stats:
+				first message
+				total messages
+				top day
+				top rooms (absolute/percentage)
+		}
 	]
 ]
 
@@ -263,22 +277,35 @@ moving-average: func [
 count-qaa: func [
 	"Count questions and answers (requires `rooms`)"
 ][
-	questions: copy []
-	foreach room words-of rooms [
-		messages: rooms/:room
-		forall messages [
-			if match-question messages/1 [
-				answer: find-answer messages/1 copy part next messages 50
+	qaa: copy []
+	foreach room words-of messages [
+		msgs: messages/:room
+		forall msgs [
+			if question? msgs/1 [
+				answer: find-answer msgs/1 copy/part next msgs 50
+				if answer [
+					; only answered questions are added
+					repend qaa [msgs/1 answer]
+				]
 			]
 		]
 	]
+	qaa
 ]
 
 find-answer: func [
 	question
 	messages
 ][
-
+	author: question/fromUser/username
+	foreach message messages [
+		foreach mentioned message/mentions [
+			if equal? author mentioned/screenName [
+				return message
+			]
+		]
+	]
+	none
 ]
 
 ; --- get funcs
