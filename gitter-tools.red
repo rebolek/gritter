@@ -173,20 +173,6 @@ stats: function [
 	users
 ]
 
-maximum-of: function [
-	series
-] [
-	max: first series
-	pos: 1
-	forall next series [
-		if series/1 > max [
-			max: series/1
-			pos: index? series
-		]
-	]
-	at series pos
-]
-
 probe-messages: function [
 	messages
 ] [
