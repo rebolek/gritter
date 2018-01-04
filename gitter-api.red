@@ -96,7 +96,7 @@ send: function [
 
 ; --- groups resource --------------------------------------------------------
 
-list-groups: does [
+get-groups: does [
 	send %groups
 ]
 
@@ -119,7 +119,7 @@ get-room-info: function [
 	room "Room name"
 ] [
 	res: send/post %rooms [uri: room]
-	if res/error [cause-error 'user 'message [rejoin ["error getting room '" room "': ^"" res/error "^""]]]
+	if res/error [cause-error 'user 'message [rejoin ["error getting room '" room "': ^"" copy/part res/error 80 "^""]]]
 	res
 ]
 
@@ -166,7 +166,7 @@ remove-room: function [
 	send/delete [%rooms room]
 ]
 
-list-users: function [
+get-users: function [
 	room
 ] [
 	room: get-id room
@@ -219,7 +219,7 @@ update-message: function [
 user-info: does [first send %user]
 
 ; TODO: make part of get-messages?
-list-unread: function [
+get-unread: function [
 	user
 	room
 ] [
@@ -241,21 +241,21 @@ mark-as-read: function [
 	]
 ]
 
-list-orgs: function [
+get-orgs: function [
 	user
 ] [
 	user: get-id user
 	send [%user user %orgs]
 ]
 
-list-repos: function [
+get-repos: function [
 	user
 ] [
 	user: get-id user
 	send [%user user %repos]
 ]
 
-list-channels: function [
+get-channels: function [
 	user
 ] [
 	user: get-id user

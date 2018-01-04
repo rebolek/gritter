@@ -2,6 +2,21 @@ Red []
 
 do %gitter-api.red
 
+fix-mold: func [
+	"Do some changes to texts in messages block, so mold wouldn't produce garbage"
+	value
+	/only
+][
+	forall value [
+		replace/all value/1/text #"{" "^^{"
+		replace/all value/1/text #"}" "^^}"
+
+		replace/all value/1/html #"{" "^^{"
+		replace/all value/1/html #"}" "^^}"
+	]
+	either only [mold/only value][mold value]
+]
+
 select-by: function [
 	"Select map! or object! in series by it's field"
 	series
@@ -60,34 +75,91 @@ strip-message: function [
 	message/meta: none
 ]
 
-download-all-messages: func [
-	room
+; TODO: split this in multiple functions
+download-room: func [
+	room ; TODO support ID here and better conversion of different types
 	/compact "Remove some unnecessary fields"
+	/force "Do not use cached messages and re-download everything"
+	/verbose "Inform what is going on"
 	/to
 		filename
+	/with
+		cache [block!] "If we have messages in memory, we can save lot of time"
+	/local info ret last-id newest messages t
 ] [
+	ret: copy []
+	; some preparation
+	info: func [value] [if verbose [print value]]
 	if path? room [room: gitter/get-room-info room]
 	unless exists? %messages/ [make-dir %messages/]
 	unless to [
-		filename: rejoin [%messages/ replace/all copy room/name #"/" #"-" %.red]
+		filename: rejoin [%messages/ room/id %.red]
 	]
-	ret: gitter/get-messages room
-	if empty? ret [
-		; the room is empty
-		write filename ""
-		return none
-	]
-	if compact [foreach message ret [strip-message message]]
-	last-id: ret/1/id
-	write filename mold/only reverse ret
-	until [
-		ret: gitter/get-messages/with room [beforeId: last-id]
-		if compact [foreach message ret [strip-message message]]
-		unless empty? ret [
-			last-id: ret/1/id
-			write/append filename mold/only reverse ret
+	info ["^/Download messages for room" room/name]
+	; load cached messages, when required
+	either with [
+		ret: cache
+	][
+		info ["Checking cached file" filename]
+		if all [not force exists? filename] [
+			t: now/time/precise
+			info ["Loading file" filename "..."]
+			ret: load filename
+			info ["File" filename "with" length? ret "messages was loaded in" now/time/precise - t]
 		]
-		empty? ret
+	]
+	
+	either empty? ret [
+		info "Downloading all messages"
+		; we have no messages, so we will downloaded them
+		; from newest to oldest (that's how Gitter works)
+
+		; load first bunch of messages
+		ret: gitter/get-messages room
+		if empty? ret [
+			; the room is empty
+			write filename ""
+			return none
+		]
+		if compact [foreach message ret [strip-message message]]
+		last-id: ret/1/id
+
+		write filename mold/only ret
+		until [
+			info ["Downloading messages before" ret/1/sent]
+			ret: gitter/get-messages/with room [beforeId: last-id]
+			info ["Downloaded" length? ret "messages."]
+			if compact [foreach message ret [strip-message message]]
+			unless empty? ret [
+				last-id: ret/1/id
+		; FIXME: This is workaround for missing MOLD/ALL
+		;		"{" and "}" are not escaped and can't be loaded back
+		;		so we're going to escape them manually
+				write/append filename mold/only reverse ret
+				ret: reverse ret
+			]
+			empty? ret
+		]
+		ret
+	] [
+		; we have cached messages, so we will download only newer messages
+
+		; now we will download messages in loop until we have all new messages
+		until [
+			info ["Downloading messages posted after" ret/1/sent]
+			; NOTE: [afterId] returns messages from oldest to newest, so we need
+			;		to reverse the order, to have same format as cached messages
+			messages: reverse gitter/get-messages/with 
+				room 
+				compose [afterId: (ret/1/id)]
+			info ["Downloaded" length? messages "messages."]				
+			if compact [foreach message ret [strip-message message]]
+			insert ret messages ; we may be inserting empty block, but who cares
+			empty? messages
+		]
+		; now save everything (there's no write/insert do do it in loop)
+		write filename mold ret
+		ret
 	]
 ]
 
@@ -104,11 +176,25 @@ select-message: function [
 
 ; --- searching
 
-match-question: function [
+question?: function [
 	"Return LOGIC! value indicating whether message contains question mark."
 	message
 ] [
-	not not find message #"?"
+	not not find message/text #"?"
+]
+
+get-mentions: function [
+	message
+][
+	name: none
+	mentions: copy []
+	parse message/text [
+		some [
+			"@" copy name to space (append mentions name)
+		|	skip	
+		]
+	]
+	mentions
 ]
 
 get-code: function [
@@ -152,7 +238,7 @@ gfind: func [
 
 ; ---
 
-stats: function [
+get-user-messages: function [
 	messages
 ] [
 	users: #()
@@ -171,6 +257,33 @@ stats: function [
 		append users/:user/messages message
 	]
 	users
+]
+
+maximum-of: function [
+	series
+] [
+	max: first series
+	pos: 1
+	forall next series [
+		if series/1 > max [
+			max: series/1
+			pos: index? series
+		]
+	]
+	at series pos
+]
+
+red-group-id: "57542d9cc43b8c601977e621"
+get-rooms: func [
+	"Save room info on disk for later usage"
+	group
+	/local rooms
+][
+	rooms: gitter/group-rooms group
+	unless exists? %rooms/ [make-dir %rooms/]
+	foreach room rooms [
+		save rejoin [%rooms/ room/id %.red] room
+	]
 ]
 
 probe-messages: function [
