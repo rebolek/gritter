@@ -7,8 +7,7 @@ ROOMS is rooms metadata.
 MESSAGES is map of room messages with room id as key.
 }
 	To-Do: [
-		"MESSAGES should be ROOM-MESSAGES and USERS should be USER-MESSAGES"
-		"and ALL-MESSAGES should be MESSAGES"
+		"USERS should be USER-MESSAGES"
 		{
 			Room stats:
 				room created on
@@ -79,13 +78,13 @@ init-rooms: func [
 	print "Loading..."
 	room-files: read %messages/
 	rooms: #()
-	messages: #()
-	all-messages: make hash! 50'000
+	room-messages: #()
+	messages: make hash! 100'000
 	foreach room room-files [
 		room-id: probe form first split room #"."
 		rooms/:room-id: load rejoin [%rooms/ room-id %.red]
-		messages/:room-id: load rejoin [%messages/ room]
-		foreach message messages/:room-id [append all-messages message]  
+		room-messages/:room-id: load rejoin [%messages/ room]
+		foreach message room-messages/:room-id [append messages message]  
 	]
 ]
 get-name: func [value][
@@ -102,7 +101,7 @@ get-message-count: func [
 	print "Get messages"
 	msg-count: copy []
 	names: copy []
-	foreach room words-of messages [
+	foreach room words-of room-messages [
 	;	room-info: gitter/get-room-info room 
 		room-info: select rooms room
 		; TODO: last split.. will produce just "datatype" from "red-red-map-datatype"
@@ -111,7 +110,7 @@ get-message-count: func [
 		repend/only names [name room-info/id]
 		if get room-info/public [ ; FIXME: TRUE/FALSE here are WORD!, not LOGIC!
 			print [room-info/name room-info/public]
-			repend/only msg-count [name length? messages/:room]
+			repend/only msg-count [name length? room-messages/:room]
 		]
 	]
 	sort/compare msg-count :sort-by-value
@@ -127,8 +126,8 @@ init-users: func [
 ][
 	print "Init users"
 	users: #()
-	foreach room words-of messages [
-		foreach message messages/:room [
+	foreach room words-of room-messages [
+		foreach message room-messages/:room [
 			name: message/fromUser/username
 			unless users/:name [users/:name: copy []]
 			append users/:name message
@@ -234,7 +233,7 @@ get-dates: func [
 	msgs: any [
 		attempt [
 			room: gitter/get-room-info name
-			select messages room/id
+			select room-messages room/id
 		]
 		select users form name
 	]
@@ -258,13 +257,15 @@ get-dates: func [
 	]
 	sort/compare dates :sort-by-key
 ; smooth data
-	smoothed: moving-average dates 7
+	smoothed7: moving-average dates 7
+	smoothed30: moving-average dates 30
 	forall dates [
 		index: index? dates
-		dates/1/2: smoothed/:index
+		append first dates pick smoothed7 index
+		append first dates pick smoothed30 index
 	]
 
-	insert/only dates ["date" "count"]
+	insert/only dates ["date" "value" "avg7" "avg30"]
 	write probe rejoin [%stats/data/ filename %-dates.csv] csv/encode dates
 	dates
 ]
@@ -315,8 +316,8 @@ count-qaa: func [
 	"Count questions and answers (requires `rooms`)"
 ][
 	qaa: copy []
-	foreach room words-of messages [
-		msgs: messages/:room
+	foreach room words-of room-messages [
+		msgs: room-messages/:room
 		forall msgs [
 			if question? msgs/1 [
 				answer: find-answer msgs/1 copy/part next msgs 50
@@ -375,7 +376,6 @@ get-stats: func [
 
 	foreach room words-of rooms [
 		get-dates rooms/:room/name
-
 	]
 	get-top-users
 ;	get-dates 'rebolek
