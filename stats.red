@@ -87,21 +87,12 @@ init-rooms: func [
 	messages: make hash! 100'000
 	foreach room room-files [
 		room-id: probe form first split room #"."
-<<<<<<< HEAD
 		r: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
 		room-messages/:room-id: load rejoin [%messages/ room]
 		foreach message room-messages/:room-id [
 			message/room: r/name
 			message/room-id: room-id
 			append messages message
-=======
-		rooms/:room-id: load rejoin [%rooms/ room-id %.red]
-		messages/:room-id: load rejoin [%messages/ room]
-		foreach message messages/:room-id [
-			message/room: room-id
-			message/room-name: rooms/:room-id/name
-			append all-messages message
->>>>>>> eedcb4fb120a6b88e0cd4968e3e31352cda6fc49
 		]  
 	]
 ]
@@ -206,7 +197,7 @@ query: func [
 
 get-user-info: func [
 	name
-;	/local messages comparator days rooms
+	/local messages comparator days rooms day room
 ][
 {
 	Users stats:
@@ -230,7 +221,7 @@ get-user-info: func [
 		either rooms/:room [rooms/:room: rooms/:room + 1][rooms/:room: 0]
 	]
 
-	user-stats: context compose [
+	context compose [
 		name: (user/name)
 		id: (user/id)
 		first: (messages/1/sent)
@@ -239,7 +230,7 @@ get-user-info: func [
 		avatar_small: (user/avatars/small)
 		avatar_medium: (user/avatars/medium)
 		days: (sort/skip/compare/reverse to block! days 2 2) ; NOTE: use map! here?
-		rooms: (rooms)
+		rooms: (to map! sort/skip/compare/reverse to block! rooms 2 2)
 	]
 ]
 
