@@ -52,6 +52,8 @@ circular!: object [
 	]
 ]
 
+; ------------------------------------- 
+
 ; todo add order, do all in refirements
 sort-by-value: func [this that][this/2 > that/2]
 sort-by-key: func [this that][this/1 < that/1]
@@ -72,6 +74,8 @@ sort-by: func [
 	func [this that][]
 ]
 
+;  -------------- init func
+
 init-rooms: func [
 	/local room-files
 ] [
@@ -83,12 +87,21 @@ init-rooms: func [
 	messages: make hash! 100'000
 	foreach room room-files [
 		room-id: probe form first split room #"."
+<<<<<<< HEAD
 		r: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
 		room-messages/:room-id: load rejoin [%messages/ room]
 		foreach message room-messages/:room-id [
 			message/room: r/name
 			message/room-id: room-id
 			append messages message
+=======
+		rooms/:room-id: load rejoin [%rooms/ room-id %.red]
+		messages/:room-id: load rejoin [%messages/ room]
+		foreach message messages/:room-id [
+			message/room: room-id
+			message/room-name: rooms/:room-id/name
+			append all-messages message
+>>>>>>> eedcb4fb120a6b88e0cd4968e3e31352cda6fc49
 		]  
 	]
 ]
@@ -148,6 +161,45 @@ init-users: func [
 		append users/:name/messages message
 	]
 	users
+]
+
+; -- query
+
+query: func [
+	"Simple query dialect for filtering messages"
+	dialect
+	/local 
+		check-name check-room
+		value
+][
+	check-name: check-room: true
+	value: none
+
+	name-rule: ['name ['is | '=] set value string! (probe 
+		check-name: compose [equal? message/fromUser/username (value)]
+	)]
+	room-rule: ['room ['is | '=] set value string! (probe
+		check-room: compose [equal? message/room-name (value)]
+	)]
+	parse dialect [
+		some [
+			name-rule
+		|	room-rule	
+		]
+
+	]
+	print [check-name check-room]
+
+	collect [
+		foreach message all-messages [
+			if all [
+				do check-name
+				do check-room 
+			][	
+				keep message
+			]
+		]
+	]
 ]
 
 ; -- stats for users
