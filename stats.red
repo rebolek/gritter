@@ -29,6 +29,7 @@ do %../red-tools/csv.red
 do %gitter-tools.red
 do %options.red
 
+from: make op! func [value series][select series value]
 
 circular!: object [
 	size: 5
@@ -82,9 +83,13 @@ init-rooms: func [
 	messages: make hash! 100'000
 	foreach room room-files [
 		room-id: probe form first split room #"."
-		rooms/:room-id: load rejoin [%rooms/ room-id %.red]
+		r: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
 		room-messages/:room-id: load rejoin [%messages/ room]
-		foreach message room-messages/:room-id [append messages message]  
+		foreach message room-messages/:room-id [
+			message/room: r/name
+			message/room-id: room-id
+			append messages message
+		]  
 	]
 ]
 get-name: func [value][
@@ -118,7 +123,7 @@ get-message-count: func [
 	insert/only msg-count [name count]
 	write %stats/data/msg-count.csv csv/encode msg-count
 	insert/only names [name file]
-	write %stats/data/names.csv csv/encode names
+	write %stats/data/room-list.json json/encode names
 ]
 
 init-users: func [
@@ -126,12 +131,21 @@ init-users: func [
 ][
 	print "Init users"
 	users: #()
-	foreach room words-of room-messages [
-		foreach message room-messages/:room [
-			name: message/fromUser/username
-			unless users/:name [users/:name: copy []]
-			append users/:name message
+	foreach message messages [
+		name: message/fromUser/username
+		unless users/:name [
+			users/:name: make map! compose/deep [
+				name: (name)
+				id: (message/fromUser/id)
+				avatars: [
+					small (message/fromUser/avatarUrlSmall)
+					medium (message/fromUser/avatarUrlMedium)
+					full (message/fromUser/avatarUrl)
+				]
+				messages: [(copy [])]
+			]
 		]
+		append users/:name/messages message
 	]
 	users
 ]
@@ -140,7 +154,7 @@ init-users: func [
 
 get-user-info: func [
 	name
-	/local messages comparator days rooms
+;	/local messages comparator days rooms
 ][
 {
 	Users stats:
@@ -149,27 +163,46 @@ get-user-info: func [
 		top day
 		top rooms (absolute/percentage)
 }
-	messages: select users name
+	user: users/:name
+	messages: select user 'messages
 	comparator: func [this that][this/sent < that/sent]
 	sort/compare messages :comparator
 
-	days: #()
-	rooms: #()
+	days: copy #()
+	rooms: copy #()
 
 	foreach message messages [
 		day: message/sent/date
-		either days/:day [
-			days/:day: days/:day + 1
-		][
-			days/:day: 0
-		]
+		room: message/room
+		either days/:day [days/:day: days/:day + 1][days/:day: 0]
+		either rooms/:room [rooms/:room: rooms/:room + 1][rooms/:room: 0]
 	]
 
 	user-stats: context compose [
+		name: (user/name)
+		id: (user/id)
 		first: (messages/1/sent)
-		total: (length? messages)
-		days: (sort/skip/compare/reverse days 2 2) ; NOTE: use map! here?
+		total: (length? messages) 
+		avatar: (user/avatars/full)
+		avatar_small: (user/avatars/small)
+		avatar_medium: (user/avatars/medium)
+		days: (sort/skip/compare/reverse to block! days 2 2) ; NOTE: use map! here?
+		rooms: (rooms)
 	]
+]
+
+export-users: func [
+	/local info comparator user-list
+][
+	user-list: copy []
+	comparator: func [this that][this/sent < that/sent]
+	foreach user words-of users [
+		info: get-user-info probe user
+		write rejoin [%stats/data/users/ user/id %.json] json/encode info
+		repend/only user-list [user/name user/id]
+	]
+	insert/only user-list [name id]
+	write rejoin [%stats/data/user-list.json] json/encode user-list
 ]
 
 get-top-users: func [
@@ -177,13 +210,13 @@ get-top-users: func [
 ][
 	; get top20 users by messags
 	top-messages: sort/compare collect [
-		foreach user words-of users [keep/only reduce [user length? users/:user]]
+		foreach user words-of users [keep/only reduce [user length? users/:user/messages]]
 	] :sort-by-value
 	write %stats/data/top20-messages.csv csv/encode head insert/only copy/part top-messages 20 ["name" "count"] 
 	top-chars: sort/compare collect [
 		foreach user words-of users [
 			count: 0
-			foreach m users/:user [count: count + length? m/text]
+			foreach m users/:user/messages [count: count + length? m/text]
 			keep/only reduce [user count]
 		]
 	] :sort-by-value
@@ -235,7 +268,7 @@ get-dates: func [
 			room: gitter/get-room-info name
 			select room-messages room/id
 		]
-		select users form name
+		select select users form name 'messages
 	]
 	if empty? msgs [return none]
 	filename: any [
@@ -266,7 +299,7 @@ get-dates: func [
 	]
 
 	insert/only dates ["date" "value" "avg7" "avg30"]
-	write probe rejoin [%stats/data/ filename %-dates.csv] csv/encode dates
+	write probe rejoin [%stats/data/rooms/ filename %.csv] csv/encode dates
 	dates
 ]
 
@@ -371,6 +404,8 @@ get-stats: func [
 	unless exists? %stats/data/ [
 		make-dir %stats/
 		make-dir %stats/data/ ; TODO: can be it be done in one pass? 
+		make-dir %stats/data/rooms/
+		make-dir %stats/data/users/
 	]
 	get-message-count
 
