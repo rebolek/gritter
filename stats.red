@@ -197,7 +197,7 @@ query: func [
 
 get-user-info: func [
 	name
-	/local messages comparator days rooms day room
+	/local messages comparator days rooms day room user
 ][
 {
 	Users stats:
@@ -220,7 +220,6 @@ get-user-info: func [
 		either days/:day [days/:day: days/:day + 1][days/:day: 0]
 		either rooms/:room [rooms/:room: rooms/:room + 1][rooms/:room: 0]
 	]
-
 	context compose [
 		name: (user/name)
 		id: (user/id)
