@@ -218,6 +218,8 @@ update-message: function [
 
 user-info: does [first send %user]
 
+get-user: func [name] [send [%users name]]
+
 ; TODO: make part of get-messages?
 get-unread: function [
 	user

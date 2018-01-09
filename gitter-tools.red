@@ -67,9 +67,9 @@ strip-message: function [
 	message/html: none
 	message/author: get-message-author message
 	message/fromUser: none
-	message/mentions: none
-	message/urls: none
-	message/issues: none
+	if empty? message/mentions [message/mentions: none]
+	if empty? message/urls [message/urls: none]
+	if empty? message/issues [message/issues: none]
 	message/unread: none
 	message/readBy: none
 	message/meta: none

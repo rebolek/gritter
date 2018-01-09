@@ -53,6 +53,14 @@ circular!: object [
 ]
 
 ; ------------------------------------- 
+; globals
+
+messages: make hash! 100'000
+users: #()
+mentions: #() 	; TODO: move to users?
+code: #()		; TODO: move to users?
+
+; ------------------------------------- 
 
 ; todo add order, do all in refirements
 sort-by-value: func [this that][this/2 > that/2]
@@ -84,7 +92,7 @@ init-rooms: func [
 	room-files: read %messages/
 	rooms: #()
 	room-messages: #()
-	messages: make hash! 100'000
+;	messages: make hash! 100'000
 	foreach room room-files [
 		room-id: probe form first split room #"."
 		r: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
@@ -133,8 +141,11 @@ get-message-count: func [
 init-users: func [
 	/local name
 ][
+	; TODO: Init users should not rely on messages, so I would be able
+	;		to download only compact form
+	;		but AFAIK there's no API call to get user info
 	print "Init users"
-	users: #()
+;	users: #()
 	foreach message messages [
 		name: message/fromUser/username
 		unless users/:name [
@@ -152,6 +163,35 @@ init-users: func [
 		append users/:name/messages message
 	]
 	users
+]
+
+init-mentions: func [][
+	print "Init mentions"
+	foreach message messages [
+		foreach mention message/mentions [
+			name: mention/screenName
+			either mentions/:name [
+				mentions/:name: mentions/:name + 1 
+			][
+				mentions/:name: 1
+			]
+		]
+	]
+	mentions
+]
+
+init-code: func [][
+	print "Init code"
+	foreach message messages [
+		if message-code: get-code message [
+			name: message/fromUser/username
+			either code/:name [
+				code/:name: code/:name + length? message-code
+			][
+				code/:name: length? message-code
+			]
+		]
+	]
 ]
 
 ; -- query
@@ -437,25 +477,30 @@ get-data: func [
 	]
 ]
 
+mapitymap: func [series func][
+	collect [
+		foreach value series [keep func value]
+	]
+]
+
 get-stats: func [
 	"Generate stats CSV files"
 ][
 	print "Starting..."
+	; get data
 	init-rooms
 	init-users
-	unless exists? %stats/data/ [
-		make-dir %stats/
-		make-dir %stats/data/ ; TODO: can be it be done in one pass? 
-		make-dir %stats/data/rooms/
-		make-dir %stats/data/users/
-	]
+	init-mentions
+	init-code
+	; prepare environment
+	dirs: [%stats/ %stats/data/ %stats/data/rooms/ %stats/data/users/]
+	foreach dir dirs [unless exists? dir [make-dir dir]]
+	; export stats
 	get-message-count
-
 	foreach room words-of rooms [
 		get-dates rooms/:room/name
 	]
 	get-top-users
-;	get-dates 'rebolek
 ]
 
 
