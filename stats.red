@@ -222,7 +222,7 @@ query: func [
 	print [check-name check-room]
 
 	collect [
-		foreach message all-messages [
+		foreach message messages [
 			if all [
 				do check-name
 				do check-room 
@@ -322,17 +322,19 @@ fix-missing-dates: func [
 ]
 
 select-room: func [
-	rooms
+	"Select room by ID or name"
+	rooms	[block!]
 	name
-	/id "Select by ID instead of name"
+	/local room
 ][
+	; try to select by ID
+	if room: select rooms form name [return room]
+	; try to select by name
 	foreach room rooms [
-		if any [
-		;	equal? room
-		][
-
-		]
+		if equal? room/name form name [return room]
 	]
+	; give up
+	none
 ]
 
 get-dates: func [
