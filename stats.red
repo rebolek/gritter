@@ -507,6 +507,14 @@ get-stats: func [
 
 
 ; main code
-
+print [
+	"Red Gitter Stats loaded" newline
+	"-----------------------" newline
+	newline
+	"Usage:" newline
+	newline
+	"* get-data - downloads new messages" newline
+	"* get-stats - create csv files for web" newline
+] 
 ; get-data ; downloads new messages
 ; get-stats ; create csv files for web
