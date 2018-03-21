@@ -3,7 +3,7 @@ Red []
 do load %redbot-options.red
 
 do %gitter-api.red
-do %github.red
+do %github-v3.red
 
 ; --- support funcs
 
@@ -26,6 +26,16 @@ user: none
 room: none
 messages: none
 reply: none
+
+help: {
+* `/help` - show this help
+* `/time` - show current bot's time
+* `@botthebot do <code>` - do following code and print last value
+}
+{
+* **/issues**  - show five latest issues
+* **/commits** - show five latest commits
+}
 
 ; --- basic commands
 ;
@@ -69,15 +79,35 @@ do-rule: [
 	any space
 	copy value
 	to end
-	(reply: attempt [do load value]) ; TODO: rewrite to be safer
+	(reply: do-code value)
+]
+
+do-code: func [
+	value
+	/local id reply
+][
+	replace/all value "load" ""
+	replace/all value "save" ""
+	replace/all value "read" ""
+	replace/all value "write" ""
+	save/header %temp.red compose/deep [
+		write %out mold do [(load value)]
+	] []
+	id: call "red %temp.red"
+	wait 0.5
+	call rejoin ["kill " id]
+	read %out	
 ]
 
 parse-command: func [
 	message
+	/local reply
 ] [
-	reply: none
-	switch message/text [
+	reply: switch message/text [
 		"/time" [reply: rejoin ["It is " now/time]]
+		"/help" [help]
+		"/issues" [list-issues]
+		"/commits" [list-commits]
 	]
 	print ["=== Reply:" mold reply]
 	if reply [gitter/send-message room reply]
@@ -95,6 +125,7 @@ parse-message: func [
 		|	commits-rule
 		|	issues-rule
 		|	do-rule
+		|	help-rule
 		]
 	]
 	print ["=== Reply:" mold reply]
@@ -126,11 +157,13 @@ mark-messages: func [] [
 
 ; --- format responses
 
-; TODO: make oe function, it is basically the same
+; TODO: make one function, it is basically the same
 
 list-commits: function [] [
+	return "TODO"
+	; TODO
 	output: copy {Here are five latest commits for [red](http://github.com/red/red):^/^/}
-	commits: head remove/part skip github/list-commits 'red/red 5 25
+	commits: head remove/part skip to block! github/list-commits 'red/red 5 25
 	foreach commit commits [
 		append output rejoin [
 			asterisk space open-block strip-newline commit/commit/message close-block
@@ -141,9 +174,11 @@ list-commits: function [] [
 	output
 ]
 
-list-issues: function [] [
+list-issues: func [] [
+	return "TODO"
+	; TODO
 	output: copy {Here are five latest issues for [red](http://github.com/red/red):^/^/}
-	issues: head remove/part skip github/get-issues/repo 'red/red 5 25
+	issues: head remove/part skip to block! github/get-issues/repo 'red/red 5 25
 	foreach issue issues [
 		append output rejoin [
 			asterisk space open-block issue/number close-block
