@@ -21,7 +21,7 @@ close-paren: #")"
 
 ; --- global vars
 
-bot-name: "@redlangbot_twitter"
+bot-name: "@botthebot" ; "@redlangbot_twitter"
 user: none
 room: none
 messages: none
@@ -42,7 +42,7 @@ join-room: func [
 
 read-messages: func [] [
 	print "=== Read messages"
-	messages: gitter/list-unread user room
+	messages: gitter/get-unread user room
 ]
 
 ; TODO: move rules elsewhere
