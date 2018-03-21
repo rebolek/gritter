@@ -157,7 +157,7 @@ make-url: function [
 				set value set-word! (append args rejoin [form value #"="])
 				set value [any-word! | any-string! | number!] (
 					if word? value [value: get :value]
-					append args rejoin [value #"&"]
+					append args rejoin [percent/encode form value #"&"]
 				)
 			]
 		]
@@ -193,13 +193,17 @@ send-request: function [
 ] [
 	if verbose [
 		print ["SEND-REQUEST to" link ", method:" method]
+		print ["header:" mold args]
 	]
 	header: copy #() ; NOTE: CLEAR causes crash later!!! 
 	if with [extend header args]
 	if auth [
+		if verbose [print [auth-type mold auth-data]]
 		switch auth-type [
 			Basic [
-				Authorization: (rejoin [auth-type space enbase rejoin [first auth-data #":" second auth-data]])
+				extend header compose [
+					Authorization: (rejoin [auth-type space enbase rejoin [first auth-data #":" second auth-data]])
+				]
 			]
 			OAuth [
 				; TODO: OAuth 1 (see Twitter API)
@@ -212,15 +216,20 @@ send-request: function [
 			]
 		]
 	]
-	data: reduce [method body-of header]
+	; Make sure all values are strings
+	body: body-of header
+	forall body [body: next body body/1: form body/1]
+	data: reduce [method body]
 ;	if content [append data content]
-	unless content [content: ""]
+	if any [
+		not content
+		method = 'GET
+	] [content: ""]
 	append data content
 	if verbose [
 		print [
 			"Link:" link newline
 			"Data:" mold data newline
-			"print here"
 		]
 	]
 	reply: write/info link data
@@ -304,7 +313,7 @@ percent: context [
 	reserved-chars: union charset "!*'();:@&=+$,/?#[]" charset "%" ; RFCs are stupid
 	unreserved-chars: charset [#"A" - #"Z" #"a" - #"z" #"0" - #"9" "-_.~"]
 	encode: function [
-		string [string!]
+		string [any-string!]
 	] [
 		value: none
 		chars: unreserved-chars
