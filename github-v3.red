@@ -58,6 +58,7 @@ send: func [
 	link: make-url compose [https://api.github.com/ (data)]
 	header: [
 		Accept: "application/vnd.github.v3+json"
+		User-Agent: "Red-GitHub-API-v3"
 	]
 	unless equal? 'GET req-type [
 		insert header [
@@ -110,7 +111,7 @@ comment {
 comment {
     Authentication
     Truncation
-    List a user's gists 				- LIST-GISTS
+    List a user's gists 				- GET-GISTS
     List all public gists 				- N/A
     List starred gists 					- N/A
     Get a single gist 					- GET-GIST 
@@ -127,7 +128,7 @@ comment {
     Custom media types
 }
 
-list-gists: func [
+get-gists: func [
 	user
 ] [
 	send [%users user %gists]
@@ -174,11 +175,11 @@ make-gist: func [
 	response/id
 ]
 
-gist-commits: func ["List gist commits" id] [send [%gists id %commits]]
+gist-commits: func ["Get gist commits" id] [send [%gists id %commits]]
 
 fork-gist: func [id] [send/method [%gists id %forks] 'POST none]
 
-list-git-forks: func [id] [send [%gists id %forks]]
+get-git-forks: func [id] [send [%gists id %forks]]
 
 ; --- COMMITS ---
 
@@ -218,7 +219,7 @@ make-commit: func [
 	]
 ]
 
-list-commits: func [
+get-commits: func [
 	repo [path!] "Repository in format owner/repo"
 ] [
 	send [%repos repo %commits]
@@ -463,10 +464,10 @@ edit-issue: function [
 ; --- REPOSITORIES
 
 comment {
-	List your repositories 			- LIST-REPO
-	List user repositories 			- LIST-REPO/BY user
-	List organization repositories 	- LIST-REPO/BY org
-	List all public repositories 	- LIST-REPO/ALL
+	List your repositories 			- GET-REPOS
+	List user repositories 			- GET-REPOS/BY user
+	List organization repositories 	- GET-REPOS/BY org
+	List all public repositories 	- GET-REPOS/ALL
 	Create 							- MAKE-REPO
 	Get 							- GET-REPO
 	Edit 							- EDIT-REPO
@@ -478,7 +479,7 @@ comment {
 }
 
 comment {
-	LIST-REPO parameters:
+	GET-REPOS parameters:
 
 		visibility 		string 	Can be one of all, public, or private. Default: all
 		affiliation 	string 	Comma-separated list of values. Can include:
@@ -493,7 +494,7 @@ comment {
 
 }
 
-list-repo: function [
+get-repos: function [
 
 ] [
 	
