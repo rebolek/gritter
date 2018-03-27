@@ -88,13 +88,13 @@ init-rooms: func [
 	/local room-files
 ] [
 	print "Init rooms"
-	print "Loading..."
 	room-files: read %messages/
 	rooms: #()
 	room-messages: #()
 ;	messages: make hash! 100'000
 	foreach room room-files [
-		room-id: probe form first split room #"."
+		room-id: form first split room #"."
+		print ["Room:" room-id stats]
 		r: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
 		room-messages/:room-id: load rejoin [%messages/ room]
 		foreach message room-messages/:room-id [
@@ -135,11 +135,11 @@ get-message-count: func [
 	insert/only msg-count [name count]
 	write %stats/data/msg-count.csv csv/encode msg-count
 	insert/only names [name file]
-	write %stats/data/room-list.json json/encode names
+	write %stats/data/room-list.csv csv/encode names
 ]
 
 init-users: func [
-	/local name
+	/local name user
 ][
 	; TODO: Init users should not rely on messages, so I would be able
 	;		to download only compact form
@@ -147,17 +147,27 @@ init-users: func [
 	print "Init users"
 ;	users: #()
 	foreach message messages [
-		name: message/fromUser/username
+		name: any [message/author message/fromUser/username]
 		unless users/:name [
-			users/:name: make map! compose/deep [
-				name: (name)
-				id: (message/fromUser/id)
-				avatars: [
-					small (message/fromUser/avatarUrlSmall)
-					medium (message/fromUser/avatarUrlMedium)
-					full (message/fromUser/avatarUrl)
+			users/:name: either message/author [
+				user: gitter/get-user probe name ; NOTE: This is for compact mode, to get info about user
+					; but this does not get avatalr url, that's available only in messages
+					; which is stupid, what can I do, OMG
+				user/avatars: copy []
+				user/messages: copy []
+				repend user/avatars ['full rejoin [https://avatars-02.gitter.im/gh/uv/4/ name]]
+				user
+			][
+				make map! compose/deep [
+					name: (name)
+					id: (message/fromUser/id)
+					avatars: [
+						small (message/fromUser/avatarUrlSmall)
+						medium (message/fromUser/avatarUrlMedium)
+						full (message/fromUser/avatarUrl)
+					]
+					messages: (copy [])
 				]
-				messages: [(copy [])]
 			]
 		]
 		append users/:name/messages message
@@ -251,21 +261,21 @@ get-user-info: func [
 
 	days: copy #()
 	rooms: copy #()
-
+	print ["Checking messages for" name]
 	foreach message messages [
 		day: message/sent/date
 		room: message/room
 		either days/:day [days/:day: days/:day + 1][days/:day: 0]
 		either rooms/:room [rooms/:room: rooms/:room + 1][rooms/:room: 0]
 	]
-	context compose [
-		name: (user/name)
+	probe context compose [
+		name: (name)
 		id: (user/id)
 		first: (messages/1/sent)
 		total: (length? messages) 
 		avatar: (user/avatars/full)
-		avatar_small: (user/avatars/small)
-		avatar_medium: (user/avatars/medium)
+;		avatar_small: (user/avatars/small)
+;		avatar_medium: (user/avatars/medium)
 		days: (sort/skip/compare/reverse to block! days 2 2) ; NOTE: use map! here?
 		rooms: (to map! sort/skip/compare/reverse to block! rooms 2 2)
 	]
@@ -274,15 +284,19 @@ get-user-info: func [
 export-users: func [
 	/local info comparator user-list
 ][
+	print "-- Export users"
 	user-list: copy []
 	comparator: func [this that][this/sent < that/sent]
 	foreach user words-of users [
 		info: get-user-info probe user
-		write rejoin [%stats/data/users/ user/id %.json] json/encode info
-		repend/only user-list [user/name user/id]
+		write rejoin [%stats/data/users/ info/id %.json] json/encode info
+		repend/only user-list [info/name info/id]
 	]
+	insert/only user-list [bullshit bullshit] 	; NOTE: This is here to prevent problem in JS, where D3's CSV loader has some trouble
+												;		identifying second line in data right. By inserting some bullshit we can prevent it.
 	insert/only user-list [name id]
-	write rejoin [%stats/data/user-list.json] json/encode user-list
+	print "save user list and we're done"
+	write rejoin [%stats/data/user-list.csv] csv/encode user-list
 ]
 
 get-top-users: func [
@@ -309,6 +323,7 @@ fix-missing-dates: func [
 	data
 	/local dates index
 ][
+	print "Fix-missing-dates"
 	dates: sort words-of data
 	repeat i (last dates) - first dates [
 		index: i + first dates 
@@ -358,6 +373,7 @@ get-dates: func [
 		name
 	]
 	print ["Room/user" name "has" length? msgs "messages."]
+	print ["Memory usage:" stats]
 	foreach message msgs [
 		date: message/sent/date
 		unless dates/:date [dates/:date: 0]
@@ -381,6 +397,7 @@ get-dates: func [
 	]
 
 	insert/only dates ["date" "value" "avg7" "avg30"]
+	print ["Saving" filename]
 	write probe rejoin [%stats/data/rooms/ filename %.csv] csv/encode dates
 	dates
 ]
@@ -419,6 +436,7 @@ moving-average: func [
 ][
 	buffer: make circular! []
 	buffer/init size
+	print "buffer initialized"
 	collect [
 		forall data [
 			append buffer/list data/1/2 ; data/1/2 because we expect data be in [key value][key value]... format
@@ -472,7 +490,7 @@ get-data: func [
 	rooms: gitter/group-rooms group-id
 	unless exists? %rooms/ [make-dir %rooms/]
 	foreach room rooms [
-		if room/public [download-room/verbose to path! room/name]
+		if room/public [download-room/compact/verbose to path! room/name]
 		save rejoin [%rooms/ room/id %.red] room
 	]
 ]
@@ -490,8 +508,8 @@ get-stats: func [
 	; get data
 	init-rooms
 	init-users
-	init-mentions
-	init-code
+;	init-mentions
+;	init-code
 	; prepare environment
 	dirs: [%stats/ %stats/data/ %stats/data/rooms/ %stats/data/users/]
 	foreach dir dirs [unless exists? dir [make-dir dir]]
@@ -501,6 +519,7 @@ get-stats: func [
 		get-dates rooms/:room/name
 	]
 	get-top-users
+	export-users
 ]
 
 

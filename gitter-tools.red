@@ -57,7 +57,7 @@ list-rooms: function [
 ]
 
 get-message-author: func [message][
-	any [all [message/fromUser message/fromUser/id] message/author]
+	any [all [message/fromUser message/fromUser/username] message/author]
 ]
 
 strip-message: function [
