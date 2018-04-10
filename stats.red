@@ -493,6 +493,8 @@ get-data: func [
 		if room/public [download-room/compact/verbose to path! room/name]
 		save rejoin [%rooms/ room/id %.red] room
 	]
+	; FIXME: when #3223 is fixed, remove this
+	workaround-3223
 ]
 
 mapitymap: func [series func][
@@ -521,6 +523,25 @@ get-stats: func [
 	get-top-users
 	export-users
 ]
+
+; ------------------------------------------------------------------------------
+
+workaround-3223: func [
+	"Fix %5780ef02c2f0db084a2231b0.red suffering from #3223"
+	/local data
+][
+	data: read %5780ef02c2f0db084a2231b0.red
+	; there are two occurences of "{", fix both 
+	replace/all data {"^{"} {"^^^{"}
+	; this is more problematic, there are seven occurences of "}", but we need to fix just two of them
+	data: find data "59bce6de1081499f1f3a89e8"
+	replace data {"^}"} {"^^^}"} 
+	replace data {"^}"} {"^^^}"}
+	write %5780ef02c2f0db084a2231b0.red data
+		
+]
+
+; ------------------------------------------------------------------------------
 
 
 ; main code
