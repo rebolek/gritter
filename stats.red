@@ -150,7 +150,7 @@ init-users: func [
 		name: any [message/author message/fromUser/username]
 		unless users/:name [
 			users/:name: either message/author [
-				user: gitter/get-user probe name ; NOTE: This is for compact mode, to get info about user
+				user: gitter/get-user name ; NOTE: This is for compact mode, to get info about user
 					; but this does not get avatalr url, that's available only in messages
 					; which is stupid, what can I do, OMG
 				user/avatars: copy []
@@ -268,7 +268,7 @@ get-user-info: func [
 		either days/:day [days/:day: days/:day + 1][days/:day: 0]
 		either rooms/:room [rooms/:room: rooms/:room + 1][rooms/:room: 0]
 	]
-	probe context compose [
+	context compose [
 		name: (name)
 		id: (user/id)
 		first: (messages/1/sent)
@@ -288,7 +288,7 @@ export-users: func [
 	user-list: copy []
 	comparator: func [this that][this/sent < that/sent]
 	foreach user words-of users [
-		info: get-user-info probe user
+		info: get-user-info user
 		write rejoin [%stats/data/users/ info/id %.json] json/encode info
 		repend/only user-list [info/name info/id]
 	]
@@ -398,7 +398,7 @@ get-dates: func [
 
 	insert/only dates ["date" "value" "avg7" "avg30"]
 	print ["Saving" filename]
-	write probe rejoin [%stats/data/rooms/ filename %.csv] csv/encode dates
+	write rejoin [%stats/data/rooms/ filename %.csv] csv/encode dates
 	dates
 ]
 
@@ -436,7 +436,6 @@ moving-average: func [
 ][
 	buffer: make circular! []
 	buffer/init size
-	print "buffer initialized"
 	collect [
 		forall data [
 			append buffer/list data/1/2 ; data/1/2 because we expect data be in [key value][key value]... format
@@ -542,18 +541,13 @@ workaround-3223: func [
 	; second message
 	print "fix message #2"
 	data: find head data "5ac48eddc574b1aa3e65d82a"
-	print length? data
 	replace data {^}} {^^^}}
-	print length? data
 	data: find data "SHA256"
-	print length? data
 	data: next find data "}"
 	replace data {^}} {^^^}}
 	replace data {^{} "^^{"
 	data: find data "and not this"
 	replace data {^{} "^^{"
-	print length? data
-	print length? head data
 	write %messages/5780ef02c2f0db084a2231b0.red head data
 		
 ]
