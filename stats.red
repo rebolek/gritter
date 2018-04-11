@@ -530,6 +530,7 @@ workaround-3223: func [
 	"Fix %5780ef02c2f0db084a2231b0.red suffering from #3223"
 	/local data
 ][
+	print "Workaround for #3223"
 	data: read %messages/5780ef02c2f0db084a2231b0.red
 	; there are two occurences of "{", fix both 
 	replace/all data {"^{"} {"^^^{"}
@@ -537,7 +538,7 @@ workaround-3223: func [
 	data: find data "59bce6de1081499f1f3a89e8"
 	replace data {"^}"} {"^^^}"} 
 	replace data {"^}"} {"^^^}"}
-	write %messages/5780ef02c2f0db084a2231b0.red data
+	write %messages/5780ef02c2f0db084a2231b0.red head data
 		
 ]
 
