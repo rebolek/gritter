@@ -494,7 +494,7 @@ get-data: func [
 		save rejoin [%rooms/ room/id %.red] room
 	]
 	; FIXME: when #3223 is fixed, remove this
-	workaround-3223
+;	workaround-3223
 ]
 
 mapitymap: func [series func][
@@ -528,16 +528,32 @@ get-stats: func [
 
 workaround-3223: func [
 	"Fix %5780ef02c2f0db084a2231b0.red suffering from #3223"
-	/local data
+;	/local data
 ][
 	print "Workaround for #3223"
 	data: read %messages/5780ef02c2f0db084a2231b0.red
-	; there are two occurences of "{", fix both 
-	replace/all data {"^{"} {"^^^{"}
-	; this is more problematic, there are seven occurences of "}", but we need to fix just two of them
+	; first message
+	print "fix message #1"
 	data: find data "59bce6de1081499f1f3a89e8"
+	replace data {"^{"} {"^^^{"}
+	replace data {"^{"} {"^^^{"}
 	replace data {"^}"} {"^^^}"} 
 	replace data {"^}"} {"^^^}"}
+	; second message
+	print "fix message #2"
+	data: find head data "5ac48eddc574b1aa3e65d82a"
+	print length? data
+	replace data {^}} {^^^}}
+	print length? data
+	data: find data "SHA256"
+	print length? data
+	data: next find data "}"
+	replace data {^}} {^^^}}
+	replace data {^{} "^^{"
+	data: find data "and not this"
+	replace data {^{} "^^{"
+	print length? data
+	print length? head data
 	write %messages/5780ef02c2f0db084a2231b0.red head data
 		
 ]
