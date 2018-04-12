@@ -151,9 +151,12 @@ init-users: func [
 		name: any [message/author message/fromUser/username]
 		unless users/:name [
 			users/:name: either message/author [
+				; TODO: this user data should be cached, so I don't have to download them on each run
 				user: gitter/get-user name ; NOTE: This is for compact mode, to get info about user
 					; but this does not get avatalr url, that's available only in messages
 					; which is stupid, what can I do, OMG
+				print ["Getting user" name]
+				wait 0.5 ; prevent hitting rate limit, before Gitter will go after me
 				user/avatars: copy []
 				user/messages: copy []
 				repend user/avatars ['full rejoin [https://avatars-02.gitter.im/gh/uv/4/ name]]
