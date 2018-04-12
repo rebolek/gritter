@@ -89,6 +89,7 @@ init-rooms: func [
 ] [
 	print "Init rooms"
 	room-files: read %messages/
+	remove-each file room-files [not equal? %.red suffix? file]
 	rooms: #()
 	room-messages: #()
 ;	messages: make hash! 100'000
@@ -493,7 +494,7 @@ get-data: func [
 		save rejoin [%rooms/ room/id %.red] room
 	]
 	; FIXME: when #3223 is fixed, remove this
-;	workaround-3223
+	workaround-3223
 ]
 
 mapitymap: func [series func][
