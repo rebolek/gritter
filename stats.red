@@ -62,6 +62,18 @@ code: #()		; TODO: move to users?
 
 ; ------------------------------------- 
 
+store: func [
+	"Store data in respective directories in right file formats"
+	file
+	data
+	/local path
+][
+	path: %stats/data/
+	save rejoin [path %red/ file %.red] msg-count
+	write rejoin [path %csv/ file %.csv] csv/encode msg-count
+	write rejoin [path %json/ file %.json] json/encode msg-count
+]
+
 ; todo add order, do all in refirements
 sort-by-value: func [this that][this/2 > that/2]
 sort-by-key: func [this that][this/1 < that/1]
@@ -134,9 +146,9 @@ get-message-count: func [
 	sort/compare msg-count :sort-by-value
 	remove-each value msg-count [zero? value/2]
 	insert/only msg-count [name count]
-	write %stats/data/msg-count.csv csv/encode msg-count
+	store %msg-count msg-count
 	insert/only names [name file]
-	write %stats/data/room-list.csv csv/encode names
+	store %room-list names
 ]
 
 init-users: func [
@@ -293,14 +305,14 @@ export-users: func [
 	comparator: func [this that][this/sent < that/sent]
 	foreach user words-of users [
 		info: get-user-info user
-		write rejoin [%stats/data/users/ info/id %.json] json/encode info
+		store rejoin [%users/ info/id] info
 		repend/only user-list [info/name info/id]
 	]
 	insert/only user-list [bullshit bullshit] 	; NOTE: This is here to prevent problem in JS, where D3's CSV loader has some trouble
 												;		identifying second line in data right. By inserting some bullshit we can prevent it.
 	insert/only user-list [name id]
 	print "save user list and we're done"
-	write rejoin [%stats/data/user-list.csv] csv/encode user-list
+	store %user-list user-list
 ]
 
 get-top-users: func [
@@ -310,7 +322,7 @@ get-top-users: func [
 	top-messages: sort/compare collect [
 		foreach user words-of users [keep/only reduce [user length? users/:user/messages]]
 	] :sort-by-value
-	write %stats/data/top20-messages.csv csv/encode head insert/only copy/part top-messages 20 ["name" "count"] 
+	store %top20-messages head insert/only copy/part top-messages 20 ["name" "count"] 
 	top-chars: sort/compare collect [
 		foreach user words-of users [
 			count: 0
@@ -318,8 +330,7 @@ get-top-users: func [
 			keep/only reduce [user count]
 		]
 	] :sort-by-value
-	write %stats/data/top20-chars.csv csv/encode head insert/only copy/part top-chars 20 ["name" "count"] 
-	
+	store %top20-chars head insert/only copy/part top-chars 20 ["name" "count"] 
 ]
 
 fix-missing-dates: func [
@@ -402,7 +413,7 @@ get-dates: func [
 
 	insert/only dates ["date" "value" "avg7" "avg30"]
 	print ["Saving" filename]
-	write rejoin [%stats/data/rooms/ filename %.csv] csv/encode dates
+	store rejoin [%rooms/ filename] dates
 	dates
 ]
 
@@ -491,7 +502,7 @@ get-data: func [
 	groups: gitter/get-groups
 	group-id: groups/8/id
 	rooms: gitter/group-rooms group-id
-	unless exists? %rooms/ [make-dir %rooms/]
+	unless exists? %rooms/ [make-dir %rooms/] ; TODO: move to prepare-environment
 	foreach room rooms [
 		if room/public [download-room/compact/verbose to path! room/name]
 		save rejoin [%rooms/ room/id %.red] room
@@ -506,18 +517,34 @@ mapitymap: func [series func][
 	]
 ]
 
+prepare-environment: func [
+	"Make sure all required directories exist"
+	/local dir dirs
+][
+	; prepare environment
+	dirs: [
+		%stats/ %stats/data/ 
+		%stats/data/red/ %stats/data/red/rooms/ %stats/data/red/users/
+		%stats/data/csv/ %stats/data/csv/rooms/ %stats/data/csv/users/
+		%stats/data/json/ %stats/data/json/rooms/ %stats/data/json/users/
+	]
+	foreach dir dirs [
+		unless exists? dir [
+			make-dir dir
+		]
+	]
+]
+
 get-stats: func [
 	"Generate stats CSV files"
 ][
 	print "Starting..."
+	prepare-environment
 	; get data
 	init-rooms
 	init-users
 ;	init-mentions
 ;	init-code
-	; prepare environment
-	dirs: [%stats/ %stats/data/ %stats/data/rooms/ %stats/data/users/]
-	foreach dir dirs [unless exists? dir [make-dir dir]]
 	; export stats
 	get-message-count
 	foreach room words-of rooms [
@@ -553,11 +580,9 @@ workaround-3223: func [
 	data: find data "and not this"
 	replace data {^{} "^^{"
 	write %messages/5780ef02c2f0db084a2231b0.red head data
-		
 ]
 
 ; ------------------------------------------------------------------------------
-
 
 ; main code
 print [
