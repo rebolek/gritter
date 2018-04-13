@@ -134,9 +134,19 @@ get-message-count: func [
 	sort/compare msg-count :sort-by-value
 	remove-each value msg-count [zero? value/2]
 	insert/only msg-count [name count]
-	write %stats/data/msg-count.csv csv/encode msg-count
+	store msg-count %stats/data/ %msg-count
 	insert/only names [name file]
-	write %stats/data/room-list.csv csv/encode names
+	store names %stats/data %room-list
+]
+
+store: func [
+	data		"Data to save"
+	path 		"Path where to save (without /<filetype>/)"
+	filename	"Filename without extension"
+][
+	save rejoin [to file! path %red/ file %.red] data
+	write rejoin [to file! path %csv/ file %.csv] csv/encode data
+	write rejoin [to file! path %json/ file %.json] json/encode data
 ]
 
 init-users: func [
@@ -293,14 +303,16 @@ export-users: func [
 	comparator: func [this that][this/sent < that/sent]
 	foreach user words-of users [
 		info: get-user-info user
-		write rejoin [%stats/data/users/ info/id %.json] json/encode info
+	;	write rejoin [%stats/data/users/ info/id %.json] json/encode info
+		store info %stats/data/users/ info/id
 		repend/only user-list [info/name info/id]
 	]
-	insert/only user-list [bullshit bullshit] 	; NOTE: This is here to prevent problem in JS, where D3's CSV loader has some trouble
-												;		identifying second line in data right. By inserting some bullshit we can prevent it.
+	insert/only user-list ['--- '---] 	; NOTE: This is here to prevent problem in JS, where D3's CSV loader has some trouble
+										;		identifying second line in data right. By inserting some nonsense we can prevent it.
 	insert/only user-list [name id]
 	print "save user list and we're done"
-	write rejoin [%stats/data/user-list.csv] csv/encode user-list
+;	write rejoin [%stats/data/user-list.csv] csv/encode user-list
+	store user-list %stats/data/ %user-list
 ]
 
 get-top-users: func [
@@ -310,7 +322,8 @@ get-top-users: func [
 	top-messages: sort/compare collect [
 		foreach user words-of users [keep/only reduce [user length? users/:user/messages]]
 	] :sort-by-value
-	write %stats/data/top20-messages.csv csv/encode head insert/only copy/part top-messages 20 ["name" "count"] 
+;	write %stats/data/top20-messages.csv csv/encode head insert/only copy/part top-messages 20 ["name" "count"] 
+	store head insert/only copy/part top-messages 20 ["name" "count"] %stats/data/ %top20-messages
 	top-chars: sort/compare collect [
 		foreach user words-of users [
 			count: 0
@@ -318,8 +331,8 @@ get-top-users: func [
 			keep/only reduce [user count]
 		]
 	] :sort-by-value
-	write %stats/data/top20-chars.csv csv/encode head insert/only copy/part top-chars 20 ["name" "count"] 
-	
+;	write %stats/data/top20-chars.csv csv/encode head insert/only copy/part top-chars 20 ["name" "count"] 
+	store head insert/only copy/part top-chars 20 ["name" "count"] %stats/data/ %top20-chars
 ]
 
 fix-missing-dates: func [
@@ -402,7 +415,8 @@ get-dates: func [
 
 	insert/only dates ["date" "value" "avg7" "avg30"]
 	print ["Saving" filename]
-	write rejoin [%stats/data/rooms/ filename %.csv] csv/encode dates
+;	write rejoin [%stats/data/rooms/ filename %.csv] csv/encode dates
+	store dates %stats/data/rooms/ filename
 	dates
 ]
 
@@ -516,7 +530,12 @@ get-stats: func [
 ;	init-mentions
 ;	init-code
 	; prepare environment
-	dirs: [%stats/ %stats/data/ %stats/data/rooms/ %stats/data/users/]
+	dirs: [
+		%stats/ %stats/data/ 
+		%stats/red/data/rooms/ %stats/data/red/users/
+		%stats/csv/data/rooms/ %stats/data/csv/users/
+		%stats/json/data/rooms/ %stats/json/data/users/
+	]
 	foreach dir dirs [unless exists? dir [make-dir dir]]
 	; export stats
 	get-message-count
@@ -553,7 +572,6 @@ workaround-3223: func [
 	data: find data "and not this"
 	replace data {^{} "^^{"
 	write %messages/5780ef02c2f0db084a2231b0.red head data
-		
 ]
 
 ; ------------------------------------------------------------------------------
