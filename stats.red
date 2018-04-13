@@ -511,12 +511,6 @@ get-data: func [
 	workaround-3223
 ]
 
-mapitymap: func [series func][
-	collect [
-		foreach value series [keep func value]
-	]
-]
-
 prepare-environment: func [
 	"Make sure all required directories exist"
 	/local dir dirs
