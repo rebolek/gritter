@@ -69,9 +69,9 @@ store: func [
 	/local path
 ][
 	path: %stats/data/
-	save rejoin [path %red/ file %.red] msg-count
-	write rejoin [path %csv/ file %.csv] csv/encode msg-count
-	write rejoin [path %json/ file %.json] json/encode msg-count
+	save rejoin [path %red/ file %.red] data
+	write rejoin [path %csv/ file %.csv] csv/encode data
+	write rejoin [path %json/ file %.json] json/encode data
 ]
 
 ; todo add order, do all in refirements
@@ -168,7 +168,7 @@ init-users: func [
 					; but this does not get avatalr url, that's available only in messages
 					; which is stupid, what can I do, OMG
 				print ["Getting user" name]
-				wait 0.5 ; prevent hitting rate limit, before Gitter will go after me
+				wait 1 ; prevent hitting rate limit, before Gitter will go after me
 				user/avatars: copy []
 				user/messages: copy []
 				repend user/avatars ['full rejoin [https://avatars-02.gitter.im/gh/uv/4/ name]]
@@ -308,8 +308,8 @@ export-users: func [
 		store rejoin [%users/ info/id] info
 		repend/only user-list [info/name info/id]
 	]
-	insert/only user-list [bullshit bullshit] 	; NOTE: This is here to prevent problem in JS, where D3's CSV loader has some trouble
-												;		identifying second line in data right. By inserting some bullshit we can prevent it.
+	insert/only user-list [none none] 	; NOTE: This is here to prevent problem in JS, where D3's CSV loader has some trouble
+										;		identifying second line in data right. By inserting some line we can prevent it.
 	insert/only user-list [name id]
 	print "save user list and we're done"
 	store %user-list user-list
