@@ -1,0 +1,69 @@
+body {
+  font-family: 'Alegreya Sans', sans-serif;
+  background: seashell;
+}
+a {
+  color: brown;
+}
+a:hover {
+  font-weight: bold;
+}
+.line {
+  fill: none;
+  stroke: forestgreen;
+  stroke-width: 2px;
+}
+.att-line {
+  fill: none;
+  stroke: lightsalmon;
+  stroke-width: 1px;
+}
+.bar {
+  fill: steelblue;
+  stroke: black;
+  stroke-width: 2px;
+}
+.bar:hover {
+  fill: rosybrown;
+}
+
+.arc text {
+  font: 10px sans-serif;
+  text-anchor: middle;
+}
+
+.arc path {
+  stroke: #fff;
+}
+
+#user-data {
+  display: inline-block;
+/*  border: 1px black solid; */
+  vertical-align: top;
+}
+
+#user-list-face {
+  width: 200px;
+  border: 1px dotted black;
+  display: table-cell;
+}
+
+#user-list {
+  overflow-y: scroll;
+  height: 350px;
+}
+
+.user-list-item {
+  margin: 4px;
+  cursor: pointer;
+}
+.user-list-item:hover {
+  color: darkblue;
+}
+
+#user-info {
+  display: table-cell;
+  vertical-align: top;
+  margin: 10px;
+  padding: 10px;
+}

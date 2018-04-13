@@ -62,6 +62,18 @@ code: #()		; TODO: move to users?
 
 ; ------------------------------------- 
 
+store: func [
+	"Store data in respective directories in right file formats"
+	file
+	data
+	/local path
+][
+	path: %stats/data/
+	try [save rejoin [path %red/ file %.red] data]
+	try [write rejoin [path %csv/ file %.csv] csv/encode data]
+	try [write rejoin [path %json/ file %.json] json/encode data]
+]
+
 ; todo add order, do all in refirements
 sort-by-value: func [this that][this/2 > that/2]
 sort-by-key: func [this that][this/1 < that/1]
@@ -134,6 +146,7 @@ get-message-count: func [
 	sort/compare msg-count :sort-by-value
 	remove-each value msg-count [zero? value/2]
 	insert/only msg-count [name count]
+<<<<<<< HEAD
 	store msg-count %stats/data/ %msg-count
 	insert/only names [name file]
 	store names %stats/data %room-list
@@ -147,6 +160,11 @@ store: func [
 	save rejoin [to file! path %red/ file %.red] data
 	write rejoin [to file! path %csv/ file %.csv] csv/encode data
 	write rejoin [to file! path %json/ file %.json] json/encode data
+=======
+	store %msg-count msg-count
+	insert/only names [name file]
+	store %room-list names
+>>>>>>> refs/remotes/origin/master
 ]
 
 init-users: func [
@@ -166,7 +184,7 @@ init-users: func [
 					; but this does not get avatalr url, that's available only in messages
 					; which is stupid, what can I do, OMG
 				print ["Getting user" name]
-				wait 0.5 ; prevent hitting rate limit, before Gitter will go after me
+				wait 1 ; prevent hitting rate limit, before Gitter will go after me
 				user/avatars: copy []
 				user/messages: copy []
 				repend user/avatars ['full rejoin [https://avatars-02.gitter.im/gh/uv/4/ name]]
@@ -303,6 +321,7 @@ export-users: func [
 	comparator: func [this that][this/sent < that/sent]
 	foreach user words-of users [
 		info: get-user-info user
+<<<<<<< HEAD
 	;	write rejoin [%stats/data/users/ info/id %.json] json/encode info
 		store info %stats/data/users/ info/id
 		repend/only user-list [info/name info/id]
@@ -313,6 +332,16 @@ export-users: func [
 	print "save user list and we're done"
 ;	write rejoin [%stats/data/user-list.csv] csv/encode user-list
 	store user-list %stats/data/ %user-list
+=======
+		store rejoin [%users/ info/id] info
+		repend/only user-list [info/name info/id]
+	]
+	insert/only user-list [none none] 	; NOTE: This is here to prevent problem in JS, where D3's CSV loader has some trouble
+										;		identifying second line in data right. By inserting some line we can prevent it.
+	insert/only user-list [name id]
+	print "save user list and we're done"
+	store %user-list user-list
+>>>>>>> refs/remotes/origin/master
 ]
 
 get-top-users: func [
@@ -322,8 +351,12 @@ get-top-users: func [
 	top-messages: sort/compare collect [
 		foreach user words-of users [keep/only reduce [user length? users/:user/messages]]
 	] :sort-by-value
+<<<<<<< HEAD
 ;	write %stats/data/top20-messages.csv csv/encode head insert/only copy/part top-messages 20 ["name" "count"] 
 	store head insert/only copy/part top-messages 20 ["name" "count"] %stats/data/ %top20-messages
+=======
+	store %top20-messages head insert/only copy/part top-messages 20 ["name" "count"] 
+>>>>>>> refs/remotes/origin/master
 	top-chars: sort/compare collect [
 		foreach user words-of users [
 			count: 0
@@ -331,8 +364,12 @@ get-top-users: func [
 			keep/only reduce [user count]
 		]
 	] :sort-by-value
+<<<<<<< HEAD
 ;	write %stats/data/top20-chars.csv csv/encode head insert/only copy/part top-chars 20 ["name" "count"] 
 	store head insert/only copy/part top-chars 20 ["name" "count"] %stats/data/ %top20-chars
+=======
+	store %top20-chars head insert/only copy/part top-chars 20 ["name" "count"] 
+>>>>>>> refs/remotes/origin/master
 ]
 
 fix-missing-dates: func [
@@ -415,8 +452,12 @@ get-dates: func [
 
 	insert/only dates ["date" "value" "avg7" "avg30"]
 	print ["Saving" filename]
+<<<<<<< HEAD
 ;	write rejoin [%stats/data/rooms/ filename %.csv] csv/encode dates
 	store dates %stats/data/rooms/ filename
+=======
+	store rejoin [%rooms/ filename] dates
+>>>>>>> refs/remotes/origin/master
 	dates
 ]
 
@@ -505,7 +546,7 @@ get-data: func [
 	groups: gitter/get-groups
 	group-id: groups/8/id
 	rooms: gitter/group-rooms group-id
-	unless exists? %rooms/ [make-dir %rooms/]
+	unless exists? %rooms/ [make-dir %rooms/] ; TODO: move to prepare-environment
 	foreach room rooms [
 		if room/public [download-room/compact/verbose to path! room/name]
 		save rejoin [%rooms/ room/id %.red] room
@@ -514,9 +555,21 @@ get-data: func [
 	workaround-3223
 ]
 
-mapitymap: func [series func][
-	collect [
-		foreach value series [keep func value]
+prepare-environment: func [
+	"Make sure all required directories exist"
+	/local dir dirs
+][
+	; prepare environment
+	dirs: [
+		%stats/ %stats/data/ 
+		%stats/data/red/ %stats/data/red/rooms/ %stats/data/red/users/
+		%stats/data/csv/ %stats/data/csv/rooms/ %stats/data/csv/users/
+		%stats/data/json/ %stats/data/json/rooms/ %stats/data/json/users/
+	]
+	foreach dir dirs [
+		unless exists? dir [
+			make-dir dir
+		]
 	]
 ]
 
@@ -524,11 +577,13 @@ get-stats: func [
 	"Generate stats CSV files"
 ][
 	print "Starting..."
+	prepare-environment
 	; get data
 	init-rooms
 	init-users
 ;	init-mentions
 ;	init-code
+<<<<<<< HEAD
 	; prepare environment
 	dirs: [
 		%stats/ %stats/data/ 
@@ -537,6 +592,8 @@ get-stats: func [
 		%stats/json/data/rooms/ %stats/json/data/users/
 	]
 	foreach dir dirs [unless exists? dir [make-dir dir]]
+=======
+>>>>>>> refs/remotes/origin/master
 	; export stats
 	get-message-count
 	foreach room words-of rooms [
@@ -575,7 +632,6 @@ workaround-3223: func [
 ]
 
 ; ------------------------------------------------------------------------------
-
 
 ; main code
 print [
