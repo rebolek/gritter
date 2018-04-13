@@ -69,9 +69,9 @@ store: func [
 	/local path
 ][
 	path: %stats/data/
-	save rejoin [path %red/ file %.red] data
-	write rejoin [path %csv/ file %.csv] csv/encode data
-	write rejoin [path %json/ file %.json] json/encode data
+	try [save rejoin [path %red/ file %.red] data]
+	try [write rejoin [path %csv/ file %.csv] csv/encode data]
+	try [write rejoin [path %json/ file %.json] json/encode data]
 ]
 
 ; todo add order, do all in refirements
