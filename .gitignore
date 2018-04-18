@@ -1,3 +1,5 @@
 options.red
 redbot-options.red
-
+messages/
+rooms/
+stats/
