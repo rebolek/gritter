@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" /> 
+		<title>Red Gitter stats</title>
+		<link rel="icon" type="image/vnd.microsoft.icon" href="favicon.ico" />
+		<link rel="stylesheet" href="css/stats.css">
+		<link  rel="stylesheet" href="https://fonts.googleapis.com/css?family=Alegreya+Sans"> 
+		<script type="text/javascript" src="js/d3.min.js"></script>
+		<script type="text/javascript" src="js/utils.js"></script>
+		<script type="text/javascript" src="js/graphs.js"></script>
+	</head>
+	<body>
+		<h1>Testing Red Gitter stats</h1>
+		<h2>Messages per room</h2>
+		<div id="rooms-graph"></div>
+		<h2 id="room-title">Activity in selected room</h2>
+		<input type="checkbox" id="checkbox-main" class="toggle-activity" onclick="toggle_activity('main')">daily activity</input>
+		<input type="checkbox" id="checkbox-7-days" class="toggle-activity" onclick="toggle_activity('7-days')">smoothed over 7 days</input>
+		<input type="checkbox" id="checkbox-30-days" class="toggle-activity" onclick="toggle_activity('30-days')">smoothed over 30 days</input>
+		<div id="line-graph"></div>
+		<a name="top20"></a>
+		<h2>Top 20 posters (across all rooms)</h2>
+		<a href="#top20" onclick="make_bar_graph('data/csv/top20-messages.csv', '#users-graph')">by messages</a>  <a href="#top20" onclick="make_bar_graph('data/csv/top20-chars.csv', '#users-graph')">by characters</a>
+		<div id="users-graph"></div>
+		<h3>User info</h3>
+<!--		
+		<div id="user-list-face">
+			<input type="text">
+			<div id="user-list"></div>
+-->			
+		</div>	
+		<div id="user-info">
+			<img id="user-image">
+			<div id="user-data">
+				<h4 id="user-name"></h4>
+				<div>Joined: <span id="user-joined"></span></div>
+				<div id="pie-graph"></div>
+			</div>
+		</div>
+		<div id="user-list-img"></div>
+		<script type="text/javascript" src="js/main_new.js"></script>
+	</body>
+</html>
