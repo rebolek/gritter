@@ -152,23 +152,25 @@ get-message-count: func [
 ]
 
 init-users: func [
-	/local name user
+	/local name user user-cache
 ][
 	; TODO: Init users should not rely on messages, so I would be able
 	;		to download only compact form
 	;		but AFAIK there's no API call to get user info
 	print "Init users"
-;	users: #()
+	user-cache: #()
+	if exists? %users.red [user-cache: load %users.red]
+	; 
 	foreach message messages [
 		name: any [message/author message/fromUser/username]
-		unless users/:name [
-			users/:name: either message/author [
-				; TODO: this user data should be cached, so I don't have to download them on each run
+		; check if user is cached and if not, download their data
+		unless user-cache/:name [
+			print ["User" name "not cached, downloading"]
+			wait 1 ; prevent hitting rate limit, before Gitter will go after me
+			user-cache/:name: either message/author [
 				user: gitter/get-user name ; NOTE: This is for compact mode, to get info about user
 					; but this does not get avatalr url, that's available only in messages
 					; which is stupid, what can I do, OMG
-				print ["Getting user" name]
-				wait 1 ; prevent hitting rate limit, before Gitter will go after me
 				user/avatars: copy []
 				user/messages: copy []
 				repend user/avatars ['full rejoin [https://avatars-02.gitter.im/gh/uv/4/ name]]
@@ -186,8 +188,14 @@ init-users: func [
 				]
 			]
 		]
+		; populate users object with cache data when required
+		unless users/:name [
+			users/:name: copy/deep user-cache/:name
+		]
+		; add current message to user
 		append users/:name/messages message
 	]
+	save %users.red user-cache
 	users
 ]
 
