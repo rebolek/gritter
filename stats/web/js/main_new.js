@@ -21,6 +21,7 @@ const $lineGraph = get('line-graph')
 const $userName = get('user-name')
 const $userJoined = get('user-joined')
 const $userImage = get('user-image')
+const $userTotal = get('user-total')
 const $pieGraph = get('pie-graph')
 const $roomsGraph = get('rooms-graph')
 const $usersGraph = get('users-graph')
@@ -95,14 +96,20 @@ async function main () {
     active: false,
     mouseOverHandler: async (data, d, i) => {
       let name = data[i].name
+      console.log("three things: data, name, users");
       console.log(data);
       console.log(name);
       console.log(users);
       let file = await fetch(`data/json/users/${users[name]}.json`)
       let idata = await file.json()
 
+      console.log("idata");
+      console.log (idata);
+      t = idata
+
       d3.select($userName).text(idata.name)
       d3.select($userJoined).text(idata.first)
+      d3.select($userTotal).text(users.name.count)
 
       let image = d3.select($userImage)
         .attr('src', idata.avatar)

@@ -25,9 +25,9 @@ MESSAGES is map of room messages with room id as key.
 	]
 ]
 
-do %../red-tools/csv.red
-do %gitter-tools.red
-do %options.red
+do %../../red-tools/csv.red
+do %../gitter-tools.red
+do %../options.red
 
 from: make op! func [value series][select series value]
 
@@ -61,6 +61,25 @@ mentions: #() 	; TODO: move to users?
 code: #()		; TODO: move to users?
 
 ; ------------------------------------- 
+
+init-stats-environment: func [
+	"Make sure all required directories exist"
+	/local dir dirs
+][
+	; prepare environment
+	dirs: [
+		%data/ 
+		%data/red/ %data/red/rooms/ %data/red/rooms/charts/ %data/red/users/
+		%data/csv/ %data/csv/rooms/ %data/csv/rooms/charts/ %data/csv/users/
+		%data/json/ %data/json/rooms/ %data/json/rooms/charts/ %data/json/users/
+	]
+	foreach dir dirs [
+		unless exists? dir [
+			make-dir dir
+		]
+	]
+]
+
 
 store: func [
 	"Store data in respective directories in right file formats"
@@ -100,7 +119,7 @@ init-rooms: func [
 	/local room-files
 ] [
 	print "Init rooms"
-	room-files: read %messages/
+	room-files: read %data/messages/
 	remove-each file room-files [not equal? %.red suffix? file]
 	rooms: #()
 	room-messages: #()
@@ -108,8 +127,8 @@ init-rooms: func [
 	foreach room room-files [
 		room-id: form first split room #"."
 		print ["Room:" room-id stats]
-		r: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
-		room-messages/:room-id: load rejoin [%messages/ room]
+		r: rooms/:room-id: load rejoin [%data/rooms/ room-id %.red]
+		room-messages/:room-id: load rejoin [%data/messages/ room]
 		foreach message room-messages/:room-id [
 			message/room: r/name
 			message/room-id: room-id
@@ -149,16 +168,6 @@ get-message-count: func [
 	store %msg-count msg-count
 	insert/only names [name file]
 	store %room-list names]
-
-store: func [
-	data		"Data to save"
-	path 		"Path where to save (without /<filetype>/)"
-	filename	"Filename without extension"
-][
-	save rejoin [to file! path %red/ file %.red] data
-	write rejoin [to file! path %csv/ file %.csv] csv/encode data
-	write rejoin [to file! path %json/ file %.json] json/encode data
-]
 
 init-users: func [
 	/local name user user-cache
@@ -430,7 +439,7 @@ get-dates: func [
 
 	insert/only dates ["date" "value" "avg7" "avg30"]
 	print ["Saving" filename]
-	store rejoin [%rooms/ filename] dates
+	store rejoin [%rooms/charts/ filename] dates
 	dates
 ]
 
@@ -519,38 +528,25 @@ get-data: func [
 	groups: gitter/get-groups
 	group-id: groups/8/id
 	rooms: gitter/group-rooms group-id
-	unless exists? %rooms/ [make-dir %rooms/] ; TODO: move to prepare-environment
 	foreach room rooms [
 		if room/public [download-room/compact/verbose to path! room/name]
-		save rejoin [%rooms/ room/id %.red] room
+;		save rejoin [%data/rooms/ room/id %.red] room
+		print "---"
+		print rejoin [%rooms/ room/id]
+		print "---"
+		print mold room
+		print "---"
+		store rejoin [%rooms/ room/id] room
 	]
 	; FIXME: when #3223 is fixed, remove this
 	workaround-3223
-]
-
-prepare-environment: func [
-	"Make sure all required directories exist"
-	/local dir dirs
-][
-	; prepare environment
-	dirs: [
-		%stats/ %stats/data/ 
-		%stats/data/red/ %stats/data/red/rooms/ %stats/data/red/users/
-		%stats/data/csv/ %stats/data/csv/rooms/ %stats/data/csv/users/
-		%stats/data/json/ %stats/data/json/rooms/ %stats/data/json/users/
-	]
-	foreach dir dirs [
-		unless exists? dir [
-			make-dir dir
-		]
-	]
 ]
 
 get-stats: func [
 	"Generate stats CSV files"
 ][
 	print "Starting..."
-	prepare-environment
+	init-stats-environment
 	; get data
 	init-rooms
 	init-users

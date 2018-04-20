@@ -1,4 +1,20 @@
-Red []
+Red [
+	Title: "Gitter tools"
+	Author: "Boleslav Březovský"
+	Purpose: "Collection of tools for working with Gitter"
+	Notes: {
+Caching
+=======
+
+All data are stored in directory %data/
+Room info is stored in %data/rooms/<room-id>.red
+Room messages are stored in %data/rooms/messages/<room-id>.red
+
+User info is stored in %data/users/<user-id>.red
+User messages are stored in %data/users/messages/<user-id>.red
+
+}
+]
 
 do %gitter-api.red
 
@@ -34,6 +50,19 @@ init-gitter: does [
 	user: gitter/user-info
 	rooms: gitter/user-rooms user/id
 	room: select-room rooms "red/red" ; Remove later
+]
+
+init-environment: does [
+	; makes required directories
+	foreach dir [
+		%data
+		%data/rooms
+		%data/rooms/messages
+		%data/users
+		%data/users/messages
+	] [
+		make-dir dir
+	]
 ]
 
 select-room: function [
@@ -83,17 +112,18 @@ download-room: func [
 	/verbose "Inform what is going on"
 	/to
 		filename
+	; TODO: Add path, or combine with filenmae somehow
 	/with
 		cache [block!] "If we have messages in memory, we can save lot of time"
 	/local info ret last-id newest messages t
 ] [
 	ret: copy []
 	; some preparation
+	init-environment
 	info: func [value] [if verbose [print value]]
 	if path? room [room: gitter/get-room-info room]
-	unless exists? %messages/ [make-dir %messages/]
 	unless to [
-		filename: rejoin [%messages/ room/id %.red]
+		filename: rejoin [%data/rooms/messages/ room/id %.red]
 	]
 	info ["^/Download messages for room" room/name]
 	; load cached messages, when required
@@ -279,10 +309,12 @@ get-rooms: func [
 	group
 	/local rooms
 ][
+	init-environment
+	where: any [where what-dir]
 	rooms: gitter/group-rooms group
-	unless exists? %rooms/ [make-dir %rooms/]
+	unless exists? path [make-dir path]
 	foreach room rooms [
-		save rejoin [%rooms/ room/id %.red] room
+		save rejoin [%data/rooms/ room/id %.red] room
 	]
 ]
 
