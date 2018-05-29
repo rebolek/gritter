@@ -517,7 +517,7 @@ get-data: func [
 	/local groups group-id rooms 
 ][
 	groups: gitter/get-groups
-	group-id: groups/8/id
+	foreach group groups [if equal? group/name "red" [group-id: group/id]]
 	rooms: gitter/group-rooms group-id
 	unless exists? %rooms/ [make-dir %rooms/] ; TODO: move to prepare-environment
 	foreach room rooms [
