@@ -25,9 +25,9 @@ MESSAGES is map of room messages with room id as key.
 	]
 ]
 
-do %../red-tools/csv.red
-do %gitter-tools.red
-do %options.red
+do %../../red-tools/csv.red
+do %../gitter-tools.red
+do %../options.red
 
 from: make op! func [value series][select series value]
 
