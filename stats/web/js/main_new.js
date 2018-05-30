@@ -84,7 +84,7 @@ async function main () {
       d3.select($roomTitle).text(`Activity in room ${name}`)
 
       updateLineGraphState({
-        source: `data/csv/rooms/${rooms[name]}`,
+        source: `data/csv/rooms/${rooms[name]}.csv`,
         settings: getCheckboxSettings()
       })
     }
