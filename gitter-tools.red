@@ -104,7 +104,7 @@ download-room: func [
 		if all [not force exists? filename] [
 			t: now/time/precise
 			info ["Loading file" filename "..."]
-			ret: load filename
+			ret: append copy [] load filename
 			info ["File" filename "with" length? ret "messages was loaded in" now/time/precise - t]
 		]
 	]
