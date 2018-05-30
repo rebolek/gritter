@@ -109,7 +109,7 @@ init-rooms: func [
 		room-id: form first split room #"."
 		print ["Room:" room-id stats]
 		r: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
-		room-messages/:room-id: append clear [] load rejoin [%messages/ room]
+		room-messages/:room-id: append copy [] load rejoin [%messages/ room]
 		foreach message room-messages/:room-id [
 			message/room: r/name
 			message/room-id: room-id
