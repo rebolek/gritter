@@ -52,7 +52,7 @@ circular!: object [
 	]
 ]
 
-; ------------------------------------- 
+; -------------------------------------
 ; globals
 
 messages: make hash! 100'000
@@ -60,7 +60,7 @@ users: #()
 mentions: #() 	; TODO: move to users?
 code: #()		; TODO: move to users?
 
-; ------------------------------------- 
+; -------------------------------------
 
 store: func [
 	"Store data in respective directories in right file formats"
@@ -109,12 +109,12 @@ init-rooms: func [
 		room-id: form first split room #"."
 		print ["Room:" room-id stats]
 		r: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
-		room-messages/:room-id: load rejoin [%messages/ room]
+		room-messages/:room-id: append clear [] load rejoin [%messages/ room]
 		foreach message room-messages/:room-id [
 			message/room: r/name
 			message/room-id: room-id
 			append messages message
-		]  
+		]
 	]
 ]
 get-name: func [value][
@@ -132,7 +132,7 @@ get-message-count: func [
 	msg-count: copy []
 	names: copy []
 	foreach room words-of room-messages [
-	;	room-info: gitter/get-room-info room 
+	;	room-info: gitter/get-room-info room
 		room-info: select rooms room
 		; TODO: last split.. will produce just "datatype" from "red-red-map-datatype"
 		name: last split room-info/name #"/"
@@ -148,16 +148,7 @@ get-message-count: func [
 	insert/only msg-count [name count]
 	store %msg-count msg-count
 	insert/only names [name file]
-	store %room-list names]
-
-store: func [
-	data		"Data to save"
-	path 		"Path where to save (without /<filetype>/)"
-	filename	"Filename without extension"
-][
-	save rejoin [to file! path %red/ file %.red] data
-	write rejoin [to file! path %csv/ file %.csv] csv/encode data
-	write rejoin [to file! path %json/ file %.json] json/encode data
+	store %room-list names
 ]
 
 init-users: func [
@@ -169,7 +160,7 @@ init-users: func [
 	print "Init users"
 	user-cache: #()
 	if exists? %users.red [user-cache: load %users.red]
-	; 
+	;
 	foreach message messages [
 		name: any [message/author message/fromUser/username]
 		; check if user is cached and if not, download their data
@@ -214,7 +205,7 @@ init-mentions: func [][
 		foreach mention message/mentions [
 			name: mention/screenName
 			either mentions/:name [
-				mentions/:name: mentions/:name + 1 
+				mentions/:name: mentions/:name + 1
 			][
 				mentions/:name: 1
 			]
@@ -242,7 +233,7 @@ init-code: func [][
 query: func [
 	"Simple query dialect for filtering messages"
 	dialect
-	/local 
+	/local
 		name-rule room-rule match-rule
 		value
 ][
@@ -305,7 +296,7 @@ get-user-info: func [
 		name: (name)
 		id: (user/id)
 		first: (messages/1/sent)
-		total: (length? messages) 
+		total: (length? messages)
 		avatar: (user/avatars/full)
 ;		avatar_small: (user/avatars/small)
 ;		avatar_medium: (user/avatars/medium)
@@ -339,7 +330,7 @@ get-top-users: func [
 	top-messages: sort/compare collect [
 		foreach user words-of users [keep/only reduce [user length? users/:user/messages]]
 	] :sort-by-value
-	store %top20-messages head insert/only copy/part top-messages 20 ["name" "count"] 
+	store %top20-messages head insert/only copy/part top-messages 20 ["name" "count"]
 	top-chars: sort/compare collect [
 		foreach user words-of users [
 			count: 0
@@ -347,7 +338,7 @@ get-top-users: func [
 			keep/only reduce [user count]
 		]
 	] :sort-by-value
-	store %top20-chars head insert/only copy/part top-chars 20 ["name" "count"] 
+	store %top20-chars head insert/only copy/part top-chars 20 ["name" "count"]
 ]
 
 fix-missing-dates: func [
@@ -358,7 +349,7 @@ fix-missing-dates: func [
 	print "Fix-missing-dates"
 	dates: sort words-of data
 	repeat i (last dates) - first dates [
-		index: i + first dates 
+		index: i + first dates
 		unless select data index [
 			data/:index: 0
 		]
@@ -514,7 +505,7 @@ find-answer: func [
 
 get-data: func [
 	"Download and/or update rooms"
-	/local groups group-id rooms 
+	/local groups group-id rooms
 ][
 	groups: gitter/get-groups
 	foreach group groups [if equal? group/name "red" [group-id: group/id]]
@@ -534,7 +525,7 @@ prepare-environment: func [
 ][
 	; prepare environment
 	dirs: [
-		%stats/ %stats/data/ 
+		%stats/ %stats/data/
 		%stats/data/red/ %stats/data/red/rooms/ %stats/data/red/users/
 		%stats/data/csv/ %stats/data/csv/rooms/ %stats/data/csv/users/
 		%stats/data/json/ %stats/data/json/rooms/ %stats/data/json/users/
@@ -578,7 +569,7 @@ workaround-3223: func [
 		data: find data "59bce6de1081499f1f3a89e8"
 		replace data {"^{"} {"^^^{"}
 		replace data {"^{"} {"^^^{"}
-		replace data {"^}"} {"^^^}"} 
+		replace data {"^}"} {"^^^}"}
 		replace data {"^}"} {"^^^}"}
 		; second message
 		print "fix message #2"
@@ -605,6 +596,6 @@ print [
 	newline
 	"* get-data - downloads new messages" newline
 	"* get-stats - create csv files for web" newline
-] 
+]
 ; get-data ; downloads new messages
 ; get-stats ; create csv files for web

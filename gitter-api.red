@@ -188,7 +188,7 @@ get-messages: function [
 	; so we need to make sure that block! is returned in all cases
 	unless block? messages [messages: reduce [messages]]
 	; Do date conversion. TODO: avatarUrl conversion (would probably need some checks)
-	foreach message messages [probe message message/sent: load message/sent]
+	foreach message messages [message/sent: load message/sent]
 	messages
 ]
 

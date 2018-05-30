@@ -108,7 +108,7 @@ download-room: func [
 			info ["File" filename "with" length? ret "messages was loaded in" now/time/precise - t]
 		]
 	]
-	
+
 	either empty? ret [
 		info "Downloading all messages"
 		; we have no messages, so we will downloaded them
@@ -149,10 +149,10 @@ download-room: func [
 			info ["Downloading messages posted after" ret/1/sent]
 			; NOTE: [afterId] returns messages from oldest to newest, so we need
 			;		to reverse the order, to have same format as cached messages
-			messages: reverse gitter/get-messages/with 
-				room 
+			messages: reverse gitter/get-messages/with
+				room
 				compose [afterId: (ret/1/id)]
-			info ["Downloaded" length? messages "messages."]				
+			info ["Downloaded" length? messages "messages."]
 			if compact [foreach message ret [strip-message message]]
 			insert ret messages ; we may be inserting empty block, but who cares
 			empty? messages
@@ -191,7 +191,7 @@ get-mentions: function [
 	parse message/text [
 		some [
 			"@" copy name to space (append mentions name)
-		|	skip	
+		|	skip
 		]
 	]
 	mentions
@@ -250,7 +250,7 @@ get-user-messages: function [
 	foreach message messages [
 		user: message/fromUser/username
 		unless users/:user [
-			users/:user: copy/deep template 
+			users/:user: copy/deep template
 		]
 		users/:user/posts: users/:user/posts + 1
 		users/:user/total-chars: users/:user/total-chars + length? message/text
