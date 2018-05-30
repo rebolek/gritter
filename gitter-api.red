@@ -40,7 +40,7 @@ map: function [
 	parse data: copy data [
 		some [
 			change set value set-word! (reduce ['quote value])
-		|	skip	
+		|	skip
 		]
 	]
 	make map! reduce data
@@ -124,7 +124,7 @@ get-room-info: function [
 ]
 
 join-room: function [
-	user 
+	user
 	room ""
 	/by-id "Room arg is id instead of name"
 ] [
@@ -183,9 +183,12 @@ get-messages: function [
 	room: get-id room
 	data: copy [%rooms room %chatMessages]
 	if with [append/only data values]
-	; Do date conversion. TODO: avatarUrl conversion (would probably need some checks)
 	messages: send data
-	foreach message messages [message/sent: load message/sent]
+	; if there's only one message in room, we get map! instead of block!,
+	; so we need to make sure that block! is returned in all cases
+	unless block? messages [messages: reduce [messages]]
+	; Do date conversion. TODO: avatarUrl conversion (would probably need some checks)
+	foreach message messages [probe message message/sent: load message/sent]
 	messages
 ]
 
