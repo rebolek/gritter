@@ -68,7 +68,7 @@ store: func [
 	data
 	/local path
 ][
-	path: %stats/data/
+	path: %web/data/
 	try [save rejoin [path %red/ file %.red] data]
 	try [write rejoin [path %csv/ file %.csv] csv/encode data]
 	try [write rejoin [path %json/ file %.json] json/encode data]
