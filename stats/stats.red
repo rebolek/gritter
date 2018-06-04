@@ -29,6 +29,20 @@ do %../../red-tools/csv.red
 do %../gitter-tools.red
 do %../options.red
 
+log: func [
+	message
+	/level
+		lvl
+][
+	message: either block? message [copy message][reduce [message]]
+	switch level [
+		title [insert message "^/--- "]
+	]
+	message: rejoin message
+	; TODO: add log saving
+	print message
+]
+
 from: make op! func [value series][select series value]
 
 circular!: object [
@@ -60,18 +74,20 @@ users: #()
 mentions: #() 	; TODO: move to users?
 code: #()		; TODO: move to users?
 
+data-path: %web/data/
+
 ; -------------------------------------
 
 store: func [
 	"Store data in respective directories in right file formats"
 	file
 	data
-	/local path
 ][
-	path: %web/data/
-	try [save rejoin [path %red/ file %.red] data]
-	try [write rejoin [path %csv/ file %.csv] csv/encode data]
-	try [write rejoin [path %json/ file %.json] json/encode data]
+	print ["storiug to " file]
+	print mold data
+	try [save rejoin [data-path %red/ file %.red] data]
+	try [write rejoin [data-path %csv/ file %.csv] csv/encode data]
+	try [write rejoin [data-path %json/ file %.json] json/encode data]
 ]
 
 ; todo add order, do all in refirements
@@ -99,7 +115,7 @@ sort-by: func [
 init-rooms: func [
 	/local room-files
 ] [
-	print "Init rooms"
+	log/level "Init rooms" 'title
 	room-files: read %messages/
 	remove-each file room-files [not equal? %.red suffix? file]
 	rooms: #()
@@ -285,12 +301,12 @@ get-user-info: func [
 
 	days: copy #()
 	rooms: copy #()
-	print ["Checking messages for" name]
+	log ["Checking messages for" name]
 	foreach message messages [
 		day: message/sent/date
 		room: message/room
-		either days/:day [days/:day: days/:day + 1][days/:day: 0]
-		either rooms/:room [rooms/:room: rooms/:room + 1][rooms/:room: 0]
+		either days/:day [days/:day: days/:day + 1][days/:day: 1]
+		either rooms/:room [rooms/:room: rooms/:room + 1][rooms/:room: 1]
 	]
 	context compose [
 		name: (name)
@@ -300,7 +316,7 @@ get-user-info: func [
 		avatar: (user/avatars/full)
 ;		avatar_small: (user/avatars/small)
 ;		avatar_medium: (user/avatars/medium)
-		days: (sort/skip/compare/reverse to block! days 2 2) ; NOTE: use map! here?
+		days: (to map! sort/skip/compare/reverse to block! days 2 2) ; NOTE: use map! here?
 		rooms: (to map! sort/skip/compare/reverse to block! rooms 2 2)
 	]
 ]
@@ -308,11 +324,11 @@ get-user-info: func [
 export-users: func [
 	/local info comparator user-list
 ][
-	print "-- Export users"
+	print "^/--- Export users"
 	user-list: copy []
 	comparator: func [this that][this/sent < that/sent]
 	foreach user words-of users [
-		info: get-user-info user
+		info: probe get-user-info user
 		store rejoin [%users/ info/id] info
 		repend/only user-list [info/name info/id]
 	]
@@ -326,6 +342,7 @@ export-users: func [
 get-top-users: func [
 	/local top-messages
 ][
+	print "^/--- Get top users"
 	; get top20 users by messags
 	top-messages: sort/compare collect [
 		foreach user words-of users [keep/only reduce [user length? users/:user/messages]]
@@ -523,12 +540,13 @@ prepare-environment: func [
 	"Make sure all required directories exist"
 	/local dir dirs
 ][
+	in-path: func [value][rejoin [data-path value]]
 	; prepare environment
-	dirs: [
-		%stats/ %stats/data/
-		%stats/data/red/ %stats/data/red/rooms/ %stats/data/red/users/
-		%stats/data/csv/ %stats/data/csv/rooms/ %stats/data/csv/users/
-		%stats/data/json/ %stats/data/json/rooms/ %stats/data/json/users/
+	dirs: reduce [
+		first split data-path #"/" data-path
+		in-path %red/ in-path %red/rooms/ in-path %red/users
+		in-path %csv/ in-path %csv/rooms/ in-path %csv/users
+		in-path %json/ in-path %json/rooms/ in-path %json/users
 	]
 	foreach dir dirs [
 		unless exists? dir [
