@@ -83,8 +83,6 @@ store: func [
 	file
 	data
 ][
-	print ["storiug to " file]
-	print mold data
 	try [save rejoin [data-path %red/ file %.red] data]
 	try [write rejoin [data-path %csv/ file %.csv] csv/encode data]
 	try [write rejoin [data-path %json/ file %.json] json/encode data]
@@ -123,7 +121,7 @@ init-rooms: func [
 ;	messages: make hash! 100'000
 	foreach room room-files [
 		room-id: form first split room #"."
-		print ["Room:" room-id stats]
+		log ["Room:" room-id stats]
 		r: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
 		room-messages/:room-id: append copy [] load rejoin [%messages/ room]
 		foreach message room-messages/:room-id [
@@ -144,7 +142,7 @@ get-message-count: func [
 	;TODO: pass room name here as arg
 ;	/local msg-count
 ][
-	print "Get messages"
+	log/level "Get messages" 'title
 	msg-count: copy []
 	names: copy []
 	foreach room words-of room-messages [
@@ -155,7 +153,7 @@ get-message-count: func [
 		name: first split name #"-"
 		repend/only names [name room-info/id]
 		if get room-info/public [ ; FIXME: TRUE/FALSE here are WORD!, not LOGIC!
-			print [room-info/name room-info/public]
+			log [room-info/name room-info/public]
 			repend/only msg-count [name length? room-messages/:room]
 		]
 	]
@@ -173,7 +171,7 @@ init-users: func [
 	; TODO: Init users should not rely on messages, so I would be able
 	;		to download only compact form
 	;		but AFAIK there's no API call to get user info
-	print "Init users"
+	log/level "Init users" 'title
 	user-cache: #()
 	if exists? %users.red [user-cache: load %users.red]
 	;
@@ -181,7 +179,7 @@ init-users: func [
 		name: any [message/author message/fromUser/username]
 		; check if user is cached and if not, download their data
 		unless user-cache/:name [
-			print ["User" name "not cached, downloading"]
+			log ["User" name "not cached, downloading"]
 			wait 1 ; prevent hitting rate limit, before Gitter will go after me
 			user-cache/:name: either message/author [
 				user: gitter/get-user name ; NOTE: This is for compact mode, to get info about user
@@ -216,7 +214,7 @@ init-users: func [
 ]
 
 init-mentions: func [][
-	print "Init mentions"
+	log/level "Init mentions" 'title
 	foreach message messages [
 		foreach mention message/mentions [
 			name: mention/screenName
@@ -231,7 +229,7 @@ init-mentions: func [][
 ]
 
 init-code: func [][
-	print "Init code"
+	log/level "Init code" 'title
 	foreach message messages [
 		if message-code: get-code message [
 			name: message/fromUser/username
@@ -324,7 +322,7 @@ get-user-info: func [
 export-users: func [
 	/local info comparator user-list
 ][
-	print "^/--- Export users"
+	log/level "Export users" 'title
 	user-list: copy []
 	comparator: func [this that][this/sent < that/sent]
 	foreach user words-of users [
@@ -335,14 +333,14 @@ export-users: func [
 	insert/only user-list [none none] 	; NOTE: This is here to prevent problem in JS, where D3's CSV loader has some trouble
 										;		identifying second line in data right. By inserting some line we can prevent it.
 	insert/only user-list [name id]
-	print "save user list and we're done"
+	log "save user list and we're done"
 	store %user-list user-list
 ]
 
 get-top-users: func [
 	/local top-messages
 ][
-	print "^/--- Get top users"
+	log/level "Get top users" 'title
 	; get top20 users by messags
 	top-messages: sort/compare collect [
 		foreach user words-of users [keep/only reduce [user length? users/:user/messages]]
@@ -363,7 +361,7 @@ fix-missing-dates: func [
 	data
 	/local dates index
 ][
-	print "Fix-missing-dates"
+	log/level "Fix-missing-dates" 'title
 	dates: sort words-of data
 	repeat i (last dates) - first dates [
 		index: i + first dates
@@ -398,7 +396,7 @@ get-dates: func [
 		data "TODO: Not implemented"
 ;	/local date dates msgs room
 ][
-	print ["Get usage for" name]
+	log ["Get usage for" name]
 	dates: copy #()
 	msgs: any [
 		attempt [
@@ -412,8 +410,8 @@ get-dates: func [
 		room/id
 		name
 	]
-	print ["Room/user" name "has" length? msgs "messages."]
-	print ["Memory usage:" stats]
+	log ["Room/user" name "has" length? msgs "messages."]
+	log ["Memory usage:" stats]
 	foreach message msgs [
 		date: message/sent/date
 		unless dates/:date [dates/:date: 0]
@@ -437,7 +435,7 @@ get-dates: func [
 	]
 
 	insert/only dates ["date" "value" "avg7" "avg30"]
-	print ["Saving" filename]
+	log ["Saving" filename]
 	store rejoin [%rooms/ filename] dates
 	dates
 ]
@@ -558,7 +556,7 @@ prepare-environment: func [
 get-stats: func [
 	"Generate stats CSV files"
 ][
-	print "Starting..."
+	log/level "Starting..." 'title
 	prepare-environment
 	; get data
 	init-rooms
@@ -583,14 +581,14 @@ workaround-3223: func [
 	if exists? %messages/5780ef02c2f0db084a2231b0.red [
 		data: read %messages/5780ef02c2f0db084a2231b0.red
 		; first message
-		print "fix message #1"
+		log "fix message #1"
 		data: find data "59bce6de1081499f1f3a89e8"
 		replace data {"^{"} {"^^^{"}
 		replace data {"^{"} {"^^^{"}
 		replace data {"^}"} {"^^^}"}
 		replace data {"^}"} {"^^^}"}
 		; second message
-		print "fix message #2"
+		log "fix message #2"
 		data: find head data "5ac48eddc574b1aa3e65d82a"
 		replace data {^}} {^^^}}
 		data: find data "SHA256"
