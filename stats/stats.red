@@ -29,6 +29,13 @@ do %../../red-tools/csv.red
 do %../gitter-tools.red
 do %../options.red
 
+flatten: func [
+	block
+	; TODO: /deep, or use the PARSE version
+][
+	collect [foreach value block [keep value]]
+]
+
 log: func [
 	message
 	/level
