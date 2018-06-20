@@ -25,7 +25,11 @@ MESSAGES is map of room messages with room id as key.
 	]
 ]
 
-do %../../red-tools/csv.red
+;do %../../red-tools/csv.red
+
+do-thru https://rebolek.com/redquire
+redquire 'csv
+
 do %../gitter-tools.red
 do %../options.red
 
@@ -34,6 +38,19 @@ flatten: func [
 	; TODO: /deep, or use the PARSE version
 ][
 	collect [foreach value block [keep value]]
+]
+
+join: func [
+	series
+	/with
+		delimiter
+][
+	unless with [delimiter: ""]
+	rejoin remove collect [
+		foreach value series [
+			keep reduce [delimiter value]
+		]
+	]
 ]
 
 log: func [
@@ -45,7 +62,7 @@ log: func [
 	switch level [
 		title [insert message "^/--- "]
 	]
-	message: rejoin message
+	message: join/with message space
 	; TODO: add log saving
 	print message
 ]
@@ -333,7 +350,7 @@ export-users: func [
 	user-list: copy []
 	comparator: func [this that][this/sent < that/sent]
 	foreach user words-of users [
-		info: probe get-user-info user
+		info: get-user-info user
 		store rejoin [%users/ info/id] info
 		repend/only user-list [info/name info/id]
 	]
@@ -527,7 +544,7 @@ find-answer: func [
 
 get-data: func [
 	"Download and/or update rooms"
-	/local groups group-id rooms
+;	/local groups group-id rooms
 ][
 	groups: gitter/get-groups
 	foreach group groups [if equal? group/name "red" [group-id: group/id]]
