@@ -11,8 +11,8 @@ Red [
 	}
 ]
 
-do %json.red
-do %http-tools.red
+do https://rebolek.com/redquire
+redquire [json http-tools]
 
 gitter: context [
 
