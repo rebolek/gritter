@@ -90,6 +90,7 @@ send: function [
 		ts: copy ret/headers/X-RateLimit-Reset
 		set 'next-reset to-float rejoin [take/part ts 10 "." ts]
 	]
+	unless equal? 200 ret/code [do make error! ret/data/error]
 	;probe rejoin ["remaining: " remaining-requests " next reset:" next-reset - (to-integer now/precise)]
 	ret/data
 ]
