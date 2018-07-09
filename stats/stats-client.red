@@ -53,7 +53,7 @@ sc: context [
 	][
 		id: select-user name
 		unless user-cache/:id [
-			user-cache/:id: load rejoin [base-url %/users/ id %.red]
+			user-cache/:id: do load rejoin [base-url %/users/ id %.red]
 		]
 		user-cache/:id
 	]
@@ -66,6 +66,19 @@ sc: context [
 			room-cache/:id: load rejoin [base-url %/rooms/ id %.red]
 		]
 		room-cache/:id
+	]
+
+	show-user: func [name][
+		user: load-user name
+		print [
+			"Name:" user/name newline
+			"Joined on:" user/first newline
+			"Messages:" user/total newline
+			"Average messages per day:" user/total / (to float! now/date - user/first/date) newline
+			"Most chatty on:" t: first sort/skip/compare/reverse to block! user/days 2 2 rejoin [#"(" select user/days t " messages)"] newline
+			"Active in:" length? words-of user/rooms "rooms" newline
+			"Favorite room:" t: first sort/skip/compare/reverse to block! user/rooms 2 2 rejoin [#"(" to percent! (select user/rooms t) / (to float! user/total) #")"] newline
+		]
 	]
 
 	build-room-cache: func [
@@ -89,6 +102,9 @@ window: [
 ; --- main ---
 sc/init
 
-if system/view [
+either system/view [
 	view window
+][
+	sc/show-user "rebolek"
 ]
+
