@@ -36,6 +36,8 @@ redquire 'csv
 do %../gitter-tools.red
 do %../options.red
 
+do %../../red-tools/qobom.red ; TODO: use REDQUIRE
+
 ; --- support functions ------------------------------------------------
 
 flatten: func [
@@ -146,8 +148,8 @@ log: func [
 ; globals
 
 messages: any [all [value? 'messages messages] make hash! 100'000] ; prevent messages, if already exist (for testing purposes)
-users: #()
-rooms: #()
+users: any [all [value? 'users users] #()]
+rooms: any [all [value? 'rooms rooms] #()]
 mentions: #() 	; TODO: move to users?
 code: #()		; TODO: move to users?
 
@@ -457,7 +459,7 @@ select-room: func [
 	; try to select by ID
 	if room: select rooms form name [return room]
 	; try to select by name
-	foreach room rooms [
+	foreach room values-of rooms [
 		if equal? room/name form name [return room]
 	]
 	; give up
@@ -561,13 +563,14 @@ find-answer: func [
 
 get-data: func [
 	"Download and/or update rooms"
-;	/local groups group-id rooms
+	/local groups group-id group-rooms
 ][
 	groups: gitter/get-groups
 	foreach group groups [if equal? group/name "red" [group-id: group/id]]
-	rooms: gitter/group-rooms group-id
+	group-rooms: gitter/group-rooms group-id
 	unless exists? %rooms/ [make-dir %rooms/] ; TODO: move to prepare-environment
-	foreach room rooms [
+	foreach room group-rooms [
+		rooms/(room/id): room
 		if room/public [download-room/compact/verbose to path! room/name]
 		save rejoin [%rooms/ room/id %.red] room
 	]
