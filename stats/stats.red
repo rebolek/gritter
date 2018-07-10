@@ -25,6 +25,8 @@ Use SELECT-ROOM <id or name> to get room.
 				top day
 				top rooms (absolute/percentage)
 		}
+		"ROOMS has IDs as keys, USERS has names as keys, both should be same (decide if name or id)"
+		"Make separate INIT function to merge initialization"
 	]
 ]
 
@@ -149,7 +151,9 @@ log: func [
 
 messages: any [all [value? 'messages messages] make hash! 100'000] ; prevent messages, if already exist (for testing purposes)
 users: any [all [value? 'users users] #()]
+user-names: any [all [value? 'user-names user-names] #()]
 rooms: any [all [value? 'rooms rooms] #()]
+room-names: any [all [value? 'room-names room-names] #()]
 mentions: #() 	; TODO: move to users?
 code: #()		; TODO: move to users?
 
@@ -190,7 +194,7 @@ sort-by: func [
 ;  --- init func -------------------------------------------------------
 
 init-rooms: func [
-	/local room-files
+	/local room-files room-data
 ] [
 	log/level "Init rooms" 'title
 	room-files: read %messages/
@@ -200,10 +204,11 @@ init-rooms: func [
 	foreach room room-files [
 		room-id: form first split room #"."
 		log ["Room:" room-id stats]
-		r: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
+		room-data: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
+		room-names/(room-data/name): room-id
 		room-messages/:room-id: append copy [] load rejoin [%messages/ room]
 		foreach message room-messages/:room-id [
-			message/room: r/name
+			message/room: room-data/name
 			message/room-id: room-id
 			append messages message
 		]
@@ -286,6 +291,11 @@ init-users: func [
 		]
 		; add current message to user
 		append users/:name/messages message
+	]
+	; populate `user-names`
+	foreach user values-of users [
+		set 'u user
+		user-names/(user/username): user
 	]
 	save %users.red user-cache
 	users
@@ -562,7 +572,7 @@ find-answer: func [
 ; --- get funcs --------------------------------------------------------
 
 get-data: func [
-	"Download and/or update rooms"
+	"Download and/or update rooms (also fills `rooms`)"
 	/local groups group-id group-rooms
 ][
 	groups: gitter/get-groups
