@@ -3,8 +3,11 @@ Red[
 	Author: "Boleslav Březovský"
 	Notes: {
 Defines ROOMS and MESSAGES in global context (would be moved to stats context later).
-ROOMS is rooms metadata.
-MESSAGES is map of room messages with room id as key.
+ROOMS is map! of rooms metadata, IDs are keys.
+MESSAGES is hash! of all messages from all rooms.
+
+Use SELECT-ROOM <id or name> to get room.
+
 }
 	To-Do: [
 		"USERS should be USER-MESSAGES"
@@ -33,6 +36,8 @@ redquire 'csv
 do %../gitter-tools.red
 do %../options.red
 
+; --- support functions ------------------------------------------------
+
 flatten: func [
 	block
 	; TODO: /deep, or use the PARSE version
@@ -53,18 +58,46 @@ join: func [
 	]
 ]
 
-log: func [
-	message
-	/level
-		lvl
+sum: func [
+	block
 ][
-	message: either block? message [copy message][reduce [message]]
-	switch level [
-		title [insert message "^/--- "]
+	total: 0.0
+	forall block [total: total + block/1]
+	total
+]
+
+moving-average: func [
+	"Naive implementation"
+	data "In form of [[key value][key value]...]"
+	size "Filter size"
+][
+	buffer: make circular! []
+	buffer/init size
+	collect [
+		forall data [
+			append buffer/list data/1/2 ; data/1/2 because we expect data be in [key value][key value]... format
+			keep (sum buffer/list) / size
+		]
 	]
-	message: join/with message space
-	; TODO: add log saving
-	print message
+]
+
+old-moving-average: func [
+	"Naive implementation [modifies]"
+	data "In form of [[key value][key value]...]"
+	size "Filter size"
+][
+	forall data [
+		sum: 0.0
+		repeat i size [
+			sum: sum + either data/:i [
+				last-data: data/:i/2
+			][
+				last-data ; compensation for last value
+			]
+		]
+		data/1/2: sum / size
+	]
+	data
 ]
 
 from: make op! func [value series][select series value]
@@ -90,17 +123,34 @@ circular!: object [
 	]
 ]
 
-; -------------------------------------
+; --- logging ----------------------------------------------------------
+
+log: func [
+	message
+	/level
+		lvl
+][
+	message: either block? message [copy message][reduce [message]]
+	switch level [
+		title [insert message "^/--- "]
+	]
+	message: join/with message space
+	; TODO: add log saving
+	print message
+]
+
+; ----------------------------------------------------------------------
 ; globals
 
-messages: make hash! 100'000
+messages: any [all [value? 'messages messages] make hash! 100'000] ; prevent messages, if already exist (for testing purposes)
 users: #()
+rooms: #()
 mentions: #() 	; TODO: move to users?
 code: #()		; TODO: move to users?
 
 data-path: %web/data/
 
-; -------------------------------------
+; ----------------------------------------------------------------------
 
 store: func [
 	"Store data in respective directories in right file formats"
@@ -132,7 +182,7 @@ sort-by: func [
 	func [this that][]
 ]
 
-;  -------------- init func
+;  --- init func -------------------------------------------------------
 
 init-rooms: func [
 	/local room-files
@@ -140,7 +190,6 @@ init-rooms: func [
 	log/level "Init rooms" 'title
 	room-files: read %messages/
 	remove-each file room-files [not equal? %.red suffix? file]
-	rooms: #()
 	room-messages: #()
 ;	messages: make hash! 100'000
 	foreach room room-files [
@@ -266,7 +315,7 @@ init-code: func [][
 	]
 ]
 
-; -- query
+; --- query ------------------------------------------------------------
 
 query: func [
 	"Simple query dialect for filtering messages"
@@ -303,7 +352,7 @@ query: func [
 	]
 ]
 
-; -- stats for users
+; -- stats for users ---------------------------------------------------
 
 get-user-info: func [
 	name
@@ -398,7 +447,7 @@ fix-missing-dates: func [
 
 select-room: func [
 	"Select room by ID or name"
-	rooms	[block!]
+	rooms [map!]
 	name
 	/local room
 ][
@@ -410,6 +459,13 @@ select-room: func [
 	]
 	; give up
 	none
+]
+
+list-rooms: func [
+	"Return block of room names"
+	rooms
+][
+	foreach room
 ]
 
 get-dates: func [
@@ -464,48 +520,6 @@ get-dates: func [
 	dates
 ]
 
-old-moving-average: func [
-	"Naive implementation [modifies]"
-	data "In form of [[key value][key value]...]"
-	size "Filter size"
-][
-	forall data [
-		sum: 0.0
-		repeat i size [
-			sum: sum + either data/:i [
-				last-data: data/:i/2
-			][
-				last-data ; compensation for last value
-			]
-		]
-		data/1/2: sum / size
-	]
-	data
-]
-
-sum: func [
-	block
-][
-	total: 0.0
-	forall block [total: total + block/1]
-	total
-]
-
-moving-average: func [
-	"Naive implementation"
-	data "In form of [[key value][key value]...]"
-	size "Filter size"
-][
-	buffer: make circular! []
-	buffer/init size
-	collect [
-		forall data [
-			append buffer/list data/1/2 ; data/1/2 because we expect data be in [key value][key value]... format
-			keep (sum buffer/list) / size
-		]
-	]
-]
-
 count-qaa: func [
 	"Count questions and answers (requires `rooms`)"
 ][
@@ -540,7 +554,7 @@ find-answer: func [
 	none
 ]
 
-; --- get funcs
+; --- get funcs --------------------------------------------------------
 
 get-data: func [
 	"Download and/or update rooms"
@@ -596,7 +610,7 @@ get-stats: func [
 	export-users
 ]
 
-; ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------
 
 workaround-3223: func [
 	"Fix %5780ef02c2f0db084a2231b0.red suffering from #3223"
@@ -625,7 +639,7 @@ workaround-3223: func [
 	]
 ]
 
-; ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------
 
 ; main code
 print [
