@@ -49,13 +49,16 @@ join: func [
 	series
 	/with
 		delimiter
+	/local length
 ][
 	unless with [delimiter: ""]
-	rejoin remove collect [
-		foreach value series [
+	length: either char? delimiter [1][length? delimiter]
+	series: collect/into [
+		foreach value reduce series [
 			keep reduce [delimiter value]
 		]
-	]
+	] copy ""
+	head remove/part series length
 ]
 
 sum: func [
