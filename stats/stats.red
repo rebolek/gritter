@@ -333,7 +333,7 @@ export-users: func [
 	user-list: copy []
 	comparator: func [this that][this/sent < that/sent]
 	foreach user words-of users [
-		info: probe get-user-info user
+		info: get-user-info user
 		store rejoin [%users/ info/id] info
 		repend/only user-list [info/name info/id]
 	]
