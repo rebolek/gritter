@@ -249,7 +249,7 @@ get-message-count: func [
 ]
 
 init-users: func [
-	/local name user user-cache
+;	/local name user user-cache
 ][
 	; TODO: Init users should not rely on messages, so I would be able
 	;		to download only compact form
@@ -257,7 +257,7 @@ init-users: func [
 	log/level "Init users" 'title
 	user-cache: #()
 	if exists? %users.red [user-cache: load %users.red]
-	;
+	; TODO: If messages are empty, INIT-ROOMS should be
 	foreach message messages [
 		name: any [message/author message/fromUser/username]
 		; check if user is cached and if not, download their data
@@ -266,7 +266,7 @@ init-users: func [
 			wait 1 ; prevent hitting rate limit, before Gitter will go after me
 			user-cache/:name: either message/author [
 				user: gitter/get-user name ; NOTE: This is for compact mode, to get info about user
-					; but this does not get avatalr url, that's available only in messages
+					; but this does not get avatar url, that's available only in messages
 					; which is stupid, what can I do, OMG
 				user/avatars: copy []
 				user/messages: copy []
@@ -284,6 +284,8 @@ init-users: func [
 					messages: (copy [])
 				]
 			]
+			; Save cache, so we have it stored in case of problems
+			save %users.red user-cache
 		]
 		; populate users object with cache data when required
 		unless users/:name [
