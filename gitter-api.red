@@ -49,8 +49,11 @@ map: function [
 ; ----------------------------------------------------------------------------
 ;		gitter api
 ; ----------------------------------------------------------------------------
+response: none
+remaining-requests: 100
+next-reset: (to integer! now) - 1
 
-send: function [
+send: func [
 	data
 	"Send GET request to gitter API"
 	/post "Send POST request"
@@ -58,6 +61,8 @@ send: function [
 	/put
 		put-data
 	/delete
+	/local
+;		call method link header ts
 ] [
 	method: case [
 		post   ['POST]
@@ -65,6 +70,8 @@ send: function [
 		delete ['DELETE]
 		true   ['GET]
 	]
+	; TODO: verbose mode
+	print ["Send/method:" method "data:" mold data "add.data:" any [post-data put-data]]
 	link: make-url compose [https://api.gitter.im/v1/ (data)]
 	header: [
 		Accept: "application/json"
@@ -73,26 +80,51 @@ send: function [
 		insert header [Content-Type: "application/json"]
 		post-data: json/encode map any [post-data put-data]
 	]
-	if all [
-		value? 'remaining-requests
-		value? 'next-reset
+	if any [
 		remaining-requests < 2
-		0 < till-reset: next-reset - (to-integer now/precise)
+		0 < till-reset: next-reset - to integer! now
 	][
-		print ["rate limit reached. waiting" till-reset "seconds..."]
+		print ["Rate limit reached. Waiting" till-reset "seconds..."]
 		wait till-reset
 	]
-	ret: send-request/data/with/auth link method post-data header 'Bearer token
-	if ret/headers/X-RateLimit-Remaining [
-		set 'remaining-requests to-integer ret/headers/X-RateLimit-Remaining
+	response: send-request/data/with/auth link method post-data header 'Bearer token
+	if response/headers/X-RateLimit-Remaining [
+		remaining-requests: to integer! response/headers/X-RateLimit-Remaining
 	]
-	if ret/headers/X-RateLimit-Reset [
-		ts: copy ret/headers/X-RateLimit-Reset
-		set 'next-reset to-float rejoin [take/part ts 10 "." ts]
+	if response/headers/X-RateLimit-Reset [
+		ts: copy response/headers/X-RateLimit-Reset
+		next-reset: to integer! (load ts) / 1000
 	]
-	unless equal? 200 ret/code [do make error! ret/data/error]
-	;probe rejoin ["remaining: " remaining-requests " next reset:" next-reset - (to-integer now/precise)]
-	ret/data
+;	unless equal? 200 response/code [do make error! response/data/error]
+	switch/default response/code [
+		200 [response/data]
+		401 [
+			; wait until next reset when applicable
+		;	print [next-reset now next-reset > now]
+			nowi: to integer! now
+			either next-reset >= nowi [
+				print [next-reset - nowi]
+				print ["Error 401: Need to wait for" next-reset - nowi "seconds."]
+				wait next-reset - nowi
+				print "Wait over."
+				call: [send]
+				unless equal? 'get method [
+					call/1: make path! call/1
+					append call/1 method
+					append call data
+					if equal? 'post method [append call post-data]
+					if equal? 'put method [append call put-data]
+					do reduce probe call
+				]
+			][
+				do make error! response/data/error
+			]
+		]
+	][
+		; TODO: what else can happen?
+		response/data
+	]
+	response/data
 ]
 
 ; --- groups resource --------------------------------------------------------
