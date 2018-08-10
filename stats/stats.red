@@ -3,8 +3,11 @@ Red[
 	Author: "Boleslav Březovský"
 	Notes: {
 Defines ROOMS and MESSAGES in global context (would be moved to stats context later).
-ROOMS is rooms metadata.
-MESSAGES is map of room messages with room id as key.
+ROOMS is map! of rooms metadata, IDs are keys.
+MESSAGES is hash! of all messages from all rooms.
+
+Use SELECT-ROOM <id or name> to get room.
+
 }
 	To-Do: [
 		"USERS should be USER-MESSAGES"
@@ -22,12 +25,22 @@ MESSAGES is map of room messages with room id as key.
 				top day
 				top rooms (absolute/percentage)
 		}
+		"ROOMS has IDs as keys, USERS has names as keys, both should be same (decide if name or id)"
+		"Make separate INIT function to merge initialization"
 	]
 ]
 
-do %../../red-tools/csv.red
+;do %../../red-tools/csv.red
+
+do-thru https://rebolek.com/redquire
+redquire 'csv
+
 do %../gitter-tools.red
 do %../options.red
+
+do %../../red-tools/qobom.red ; TODO: use REDQUIRE
+
+; --- support functions ------------------------------------------------
 
 flatten: func [
 	block
@@ -36,18 +49,62 @@ flatten: func [
 	collect [foreach value block [keep value]]
 ]
 
-log: func [
-	message
-	/level
-		lvl
+join: func [
+	series
+	/with
+		delimiter
+	/local length
 ][
-	message: either block? message [copy message][reduce [message]]
-	switch level [
-		title [insert message "^/--- "]
+	unless with [delimiter: ""]
+	length: either char? delimiter [1][length? delimiter]
+	series: collect/into [
+		foreach value reduce series [
+			keep reduce [delimiter value]
+		]
+	] copy ""
+	head remove/part series length
+]
+
+sum: func [
+	block
+][
+	total: 0.0
+	forall block [total: total + block/1]
+	total
+]
+
+moving-average: func [
+	"Naive implementation"
+	data "In form of [[key value][key value]...]"
+	size "Filter size"
+][
+	buffer: make circular! []
+	buffer/init size
+	collect [
+		forall data [
+			append buffer/list data/1/2 ; data/1/2 because we expect data be in [key value][key value]... format
+			keep (sum buffer/list) / size
+		]
 	]
-	message: rejoin message
-	; TODO: add log saving
-	print message
+]
+
+old-moving-average: func [
+	"Naive implementation [modifies]"
+	data "In form of [[key value][key value]...]"
+	size "Filter size"
+][
+	forall data [
+		sum: 0.0
+		repeat i size [
+			sum: sum + either data/:i [
+				last-data: data/:i/2
+			][
+				last-data ; compensation for last value
+			]
+		]
+		data/1/2: sum / size
+	]
+	data
 ]
 
 from: make op! func [value series][select series value]
@@ -73,17 +130,36 @@ circular!: object [
 	]
 ]
 
-; -------------------------------------
+; --- logging ----------------------------------------------------------
+
+log: func [
+	message
+	/level
+		lvl
+][
+	message: either block? message [copy message][reduce [message]]
+	switch level [
+		title [insert message "^/--- "]
+	]
+	message: join/with message space
+	; TODO: add log saving
+	print message
+]
+
+; ----------------------------------------------------------------------
 ; globals
 
-messages: make hash! 100'000
-users: #()
+messages: any [all [value? 'messages messages] make hash! 100'000] ; prevent messages, if already exist (for testing purposes)
+users: any [all [value? 'users users] #()]
+user-names: any [all [value? 'user-names user-names] #()]
+rooms: any [all [value? 'rooms rooms] #()]
+room-names: any [all [value? 'room-names room-names] #()]
 mentions: #() 	; TODO: move to users?
 code: #()		; TODO: move to users?
 
 data-path: %web/data/
 
-; -------------------------------------
+; ----------------------------------------------------------------------
 
 store: func [
 	"Store data in respective directories in right file formats"
@@ -115,24 +191,24 @@ sort-by: func [
 	func [this that][]
 ]
 
-;  -------------- init func
+;  --- init func -------------------------------------------------------
 
 init-rooms: func [
-	/local room-files
+	/local room-files room-data
 ] [
 	log/level "Init rooms" 'title
 	room-files: read %messages/
 	remove-each file room-files [not equal? %.red suffix? file]
-	rooms: #()
 	room-messages: #()
 ;	messages: make hash! 100'000
 	foreach room room-files [
 		room-id: form first split room #"."
 		log ["Room:" room-id stats]
-		r: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
+		room-data: rooms/:room-id: load rejoin [%rooms/ room-id %.red]
+		room-names/(room-data/name): room-id
 		room-messages/:room-id: append copy [] load rejoin [%messages/ room]
 		foreach message room-messages/:room-id [
-			message/room: r/name
+			message/room: room-data/name
 			message/room-id: room-id
 			append messages message
 		]
@@ -173,7 +249,7 @@ get-message-count: func [
 ]
 
 init-users: func [
-	/local name user user-cache
+;	/local name user user-cache
 ][
 	; TODO: Init users should not rely on messages, so I would be able
 	;		to download only compact form
@@ -181,7 +257,7 @@ init-users: func [
 	log/level "Init users" 'title
 	user-cache: #()
 	if exists? %users.red [user-cache: load %users.red]
-	;
+	; TODO: If messages are empty, INIT-ROOMS should be
 	foreach message messages [
 		name: any [message/author message/fromUser/username]
 		; check if user is cached and if not, download their data
@@ -190,7 +266,7 @@ init-users: func [
 			wait 1 ; prevent hitting rate limit, before Gitter will go after me
 			user-cache/:name: either message/author [
 				user: gitter/get-user name ; NOTE: This is for compact mode, to get info about user
-					; but this does not get avatalr url, that's available only in messages
+					; but this does not get avatar url, that's available only in messages
 					; which is stupid, what can I do, OMG
 				user/avatars: copy []
 				user/messages: copy []
@@ -208,6 +284,8 @@ init-users: func [
 					messages: (copy [])
 				]
 			]
+			; Save cache, so we have it stored in case of problems
+			save %users.red user-cache
 		]
 		; populate users object with cache data when required
 		unless users/:name [
@@ -215,6 +293,11 @@ init-users: func [
 		]
 		; add current message to user
 		append users/:name/messages message
+	]
+	; populate `user-names`
+	foreach user values-of users [
+		set 'u user
+		user-names/(user/username): user
 	]
 	save %users.red user-cache
 	users
@@ -249,7 +332,7 @@ init-code: func [][
 	]
 ]
 
-; -- query
+; --- query ------------------------------------------------------------
 
 query: func [
 	"Simple query dialect for filtering messages"
@@ -286,7 +369,7 @@ query: func [
 	]
 ]
 
-; -- stats for users
+; -- stats for users ---------------------------------------------------
 
 get-user-info: func [
 	name
@@ -381,18 +464,25 @@ fix-missing-dates: func [
 
 select-room: func [
 	"Select room by ID or name"
-	rooms	[block!]
+	rooms [map!]
 	name
 	/local room
 ][
 	; try to select by ID
 	if room: select rooms form name [return room]
 	; try to select by name
-	foreach room rooms [
+	foreach room values-of rooms [
 		if equal? room/name form name [return room]
 	]
 	; give up
 	none
+]
+
+list-rooms: func [
+	"Return block of room names"
+	rooms
+][
+	foreach room
 ]
 
 get-dates: func [
@@ -447,48 +537,6 @@ get-dates: func [
 	dates
 ]
 
-old-moving-average: func [
-	"Naive implementation [modifies]"
-	data "In form of [[key value][key value]...]"
-	size "Filter size"
-][
-	forall data [
-		sum: 0.0
-		repeat i size [
-			sum: sum + either data/:i [
-				last-data: data/:i/2
-			][
-				last-data ; compensation for last value
-			]
-		]
-		data/1/2: sum / size
-	]
-	data
-]
-
-sum: func [
-	block
-][
-	total: 0.0
-	forall block [total: total + block/1]
-	total
-]
-
-moving-average: func [
-	"Naive implementation"
-	data "In form of [[key value][key value]...]"
-	size "Filter size"
-][
-	buffer: make circular! []
-	buffer/init size
-	collect [
-		forall data [
-			append buffer/list data/1/2 ; data/1/2 because we expect data be in [key value][key value]... format
-			keep (sum buffer/list) / size
-		]
-	]
-]
-
 count-qaa: func [
 	"Count questions and answers (requires `rooms`)"
 ][
@@ -523,17 +571,18 @@ find-answer: func [
 	none
 ]
 
-; --- get funcs
+; --- get funcs --------------------------------------------------------
 
 get-data: func [
-	"Download and/or update rooms"
-	/local groups group-id rooms
+	"Download and/or update rooms (also fills `rooms`)"
+	/local groups group-id group-rooms
 ][
 	groups: gitter/get-groups
 	foreach group groups [if equal? group/name "red" [group-id: group/id]]
-	rooms: gitter/group-rooms group-id
+	group-rooms: gitter/group-rooms group-id
 	unless exists? %rooms/ [make-dir %rooms/] ; TODO: move to prepare-environment
-	foreach room rooms [
+	foreach room group-rooms [
+		rooms/(room/id): room
 		if room/public [download-room/compact/verbose to path! room/name]
 		save rejoin [%rooms/ room/id %.red] room
 	]
@@ -579,7 +628,7 @@ get-stats: func [
 	export-users
 ]
 
-; ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------
 
 workaround-3223: func [
 	"Fix %5780ef02c2f0db084a2231b0.red suffering from #3223"
@@ -608,7 +657,7 @@ workaround-3223: func [
 	]
 ]
 
-; ------------------------------------------------------------------------------
+; ----------------------------------------------------------------------
 
 ; main code
 print [
