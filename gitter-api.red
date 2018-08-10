@@ -80,7 +80,7 @@ send: func [
 		insert header [Content-Type: "application/json"]
 		post-data: json/encode map any [post-data put-data]
 	]
-	if any [
+	if all [
 		remaining-requests < 2
 		0 < till-reset: next-reset - to integer! now
 	][
