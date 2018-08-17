@@ -61,16 +61,18 @@ send: func [
 	/put
 		put-data
 	/delete
+	/verbose
 	/local
-;		call method link header ts
+;		call method link header ts print*
 ] [
+	print*: :print
+	print: func [value][if verbose [print value]]
 	method: case [
 		post   ['POST]
 		put    ['PUT]
 		delete ['DELETE]
 		true   ['GET]
 	]
-	; TODO: verbose mode
 	print ["Send/method:" method "data:" mold data "add.data:" any [post-data put-data]]
 	link: make-url compose [https://api.gitter.im/v1/ (data)]
 	header: [
@@ -95,7 +97,6 @@ send: func [
 		ts: copy response/headers/X-RateLimit-Reset
 		next-reset: to integer! (load ts) / 1000
 	]
-;	unless equal? 200 response/code [do make error! response/data/error]
 	switch/default response/code [
 		200 [response/data]
 		401 [
