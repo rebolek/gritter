@@ -36,12 +36,18 @@ qobom: func [
 
 	col-rule: [
 		set column [lit-word! | lit-path!]
-		['is | '=]
-		set value skip (
-			append conditions compose [
-				equal? select-deep item (column) (value)
-			]
-		)
+		[
+			'is 'from set value block! (
+				append conditions compose/deep [
+					find [(value)] select-deep item (column)
+				]
+			)
+		|	['is | '=] set value skip (
+				append conditions compose [
+					equal? select-deep item (column) (value)
+				]
+			)
+		]
 	]
 	find-rule: [
 		set column [lit-word! | lit-path!]
@@ -63,6 +69,7 @@ qobom: func [
 		)
 	]
 	keep-rule: [
+		; TODO: `keep` is filler just now, should probably do something
 		; TODO: support multiple selectors
 		'keep
 		set selector [block! | lit-word! | lit-path!]
@@ -81,6 +88,7 @@ qobom: func [
 	]
 
 	collect [
+		probe conditions
 		foreach item data [
 			if all conditions [
 				keep switch type?/word selector [

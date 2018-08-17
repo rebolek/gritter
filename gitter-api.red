@@ -63,17 +63,17 @@ send: func [
 	/delete
 	/verbose
 	/local
-;		call method link header ts print*
+		call method link header ts print print*
 ] [
 	print*: :print
-	print: func [value][if verbose [print value]]
+	print: func [value][if verbose [print* value]]
 	method: case [
 		post   ['POST]
 		put    ['PUT]
 		delete ['DELETE]
 		true   ['GET]
 	]
-	print ["Send/method:" method "data:" mold data "add.data:" any [post-data put-data]]
+	print ["Send/method:" method "data:" data "add.data:" any [post-data put-data]]
 	link: make-url compose [https://api.gitter.im/v1/ (data)]
 	header: [
 		Accept: "application/json"
