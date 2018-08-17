@@ -38,7 +38,7 @@ redquire 'csv
 do %../gitter-tools.red
 do %../options.red
 
-do %../../red-tools/qobom.red ; TODO: use REDQUIRE
+do %qobom.red ; TODO: use REDQUIRE
 
 ; --- support functions ------------------------------------------------
 
