@@ -132,19 +132,25 @@ circular!: object [
 
 ; --- logging ----------------------------------------------------------
 
-log: func [
-	message
-	/level
-		lvl
-][
-	message: either block? message [copy message][reduce [message]]
-	switch level [
-		title [insert message "^/--- "]
+log!: context [
+	data: copy []
+	init: does [clear data]
+	set 'log func [
+		message
+		/level
+			lvl
+	][
+		message: either block? message [copy message][reduce [message]]
+		switch level [
+			title [insert message "^/--- "]
+		]
+		message: join/with message space
+		repend data [now message]
+		; TODO: Control printing
+		print message
 	]
-	message: join/with message space
-	; TODO: add log saving
-	print message
 ]
+
 
 ; ----------------------------------------------------------------------
 ; globals
