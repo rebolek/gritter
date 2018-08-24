@@ -16,6 +16,8 @@ redquire [json http-tools]
 
 gitter: context [
 
+verbose?: false ; force verbose mode
+
 any-map?: func [
 	"Return TRUE if VALUE is MAP! or OBJECT!"
 	value
@@ -63,10 +65,10 @@ send: func [
 	/delete
 	/verbose
 	/local
-		call method link header ts print print*
+		call method link header ts print print* nowi
 ] [
 	print*: :print
-	print: func [value][if verbose [print* value]]
+	print: func [value][if any [verbose verbose?] [print* value]]
 	method: case [
 		post   ['POST]
 		put    ['PUT]
