@@ -134,7 +134,7 @@ circular!: object [
 
 log!: context [
 	data: copy []
-	init: does [clear data]
+	init: does []
 	set 'log func [
 		message
 		/level
@@ -157,7 +157,6 @@ log!: context [
 
 messages: any [all [value? 'messages messages] make hash! 100'000] ; prevent messages, if already exist (for testing purposes)
 users: any [all [value? 'users users] #()]
-user-names: any [all [value? 'user-names user-names] #()]
 rooms: any [all [value? 'rooms rooms] #()]
 room-names: any [all [value? 'room-names room-names] #()]
 mentions: #() 	; TODO: move to users?
@@ -271,13 +270,19 @@ init-users: func [
 			log ["User" name "not cached, downloading"]
 			wait 1 ; prevent hitting rate limit, before Gitter will go after me
 			user-cache/:name: either message/author [
-				user: gitter/get-user name ; NOTE: This is for compact mode, to get info about user
+				; TODO: `user` can be NONE in some cases (gitter returns "unathorized" error and I'm not sure why
+				;		so we'll return just a placeholder in such case - this may be changed later, I need to think about it
+				either user: gitter/get-user name [
+					; NOTE: This is for compact mode, to get info about user
 					; but this does not get avatar url, that's available only in messages
 					; which is stupid, what can I do, OMG
-				user/avatars: copy []
-				user/messages: copy []
-				repend user/avatars ['full rejoin [https://avatars-02.gitter.im/gh/uv/4/ name]]
-				user
+					user/avatars: copy []
+					user/messages: copy []
+					repend user/avatars ['full rejoin [https://avatars-02.gitter.im/gh/uv/4/ name]]
+					user
+				][
+					user: make map! compose [username: (name)] ; TODO: needs more fields? We'll see
+				]
 			][
 				make map! compose/deep [
 					name: (name)
@@ -299,11 +304,6 @@ init-users: func [
 		]
 		; add current message to user
 		append users/:name/messages message
-	]
-	; populate `user-names`
-	foreach user values-of users [
-		set 'u user
-		user-names/(user/username): user
 	]
 	save %users.red user-cache
 	users

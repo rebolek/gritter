@@ -67,7 +67,7 @@ send: func [
 	/local
 		call method link header ts print print* nowi
 ] [
-	print*: :print
+	print*: :system/words/print
 	print: func [value][if any [verbose verbose?] [print* value]]
 	method: case [
 		post   ['POST]
@@ -102,13 +102,16 @@ send: func [
 	switch/default response/code [
 		200 [response/data]
 		401 [
+			; NOTE: we can be here not only because of rate limiting, but also because "unauthorized" access.
+			if equal? response/data/error "Unauthorized" [
+				; TODO: This is not best error handling that can be done, but it's at least something
+				return none
+			]
 			; wait until next reset when applicable
-		;	print [next-reset now next-reset > now]
 			nowi: to integer! now
 			either next-reset >= nowi [
-				print [next-reset - nowi]
 				print ["Error 401: Need to wait for" next-reset - nowi "seconds."]
-				wait next-reset - nowi
+				wait next-reset - nowi + 1
 				print "Wait over."
 				call: [send]
 				unless equal? 'get method [
@@ -125,6 +128,7 @@ send: func [
 		]
 	][
 		; TODO: what else can happen?
+		print ["Return code: " response/code]
 		response/data
 	]
 	response/data
