@@ -29,6 +29,28 @@ select-deep: func [
 	]
 ]
 
+; TODO: support `sobom` directly from `qobom ;(and rename it)
+sobom: func [
+	"Sort block of maps"
+	data
+	match-column
+;	keep-column ; TODO: support * for keeping everything 
+;	TODO: sorting order
+	/local result value
+][
+;	NOTE: How expensive is map!->block!->map! ? Is there other way?
+	result: clear #()
+	foreach item data [
+		value: item/:match-column
+		result/:value: either result/:value [
+			result/:value + 1
+		][
+			1
+		]
+	]
+	to map! sort/skip/compare/reverse to block! result 2 2
+]
+
 qobom: func [
 	"Simple query dialect for filtering messages"
 	data
