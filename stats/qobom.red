@@ -47,6 +47,11 @@ qobom: func [
 					equal? select-deep item (column) (value)
 				]
 			)
+		|	set symbol ['< | '> | '<= | '>=] set value skip (
+				append conditions compose [
+					(to paren! reduce ['select-deep 'item column]) (symbol) (value)
+				]
+			)
 		]
 	]
 	find-rule: [
