@@ -2,10 +2,16 @@ Red[
 	Title: "QOBOM - Query over block of maps"
 	Author: "Boleslav Březovský"
 	Usage: {
-keep <column> where
-<column> is <value>
-<column> contains <value>
-<column> matches <parse rule>
+```
+keep [ <column> or * ] where
+	<column> is <value>
+	<column> [ = < > <= >= ] <value>
+	<column> contains <value>
+	<column> matches <parse rule>
+```
+
+<value> can be `paren!` and then is evaluated first
+<value> can be `block!` and then is interpred as list of values that can match
 	}
 ]
 
