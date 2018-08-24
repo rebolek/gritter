@@ -34,6 +34,13 @@ qobom: func [
 	conditions: clear []
 	value: none
 
+	value-rule: [
+		set value skip (
+			print "composing value"
+			if paren? value [value: compose value]
+		)
+	]
+
 	col-rule: [
 		set column [lit-word! | lit-path!]
 		[
@@ -42,12 +49,12 @@ qobom: func [
 					find [(value)] select-deep item (column)
 				]
 			)
-		|	['is | '=] set value skip (
+		|	['is | '=] value-rule (
 				append conditions compose [
 					equal? select-deep item (column) (value)
 				]
 			)
-		|	set symbol ['< | '> | '<= | '>=] set value skip (
+		|	set symbol ['< | '> | '<= | '>=] value-rule (
 				append conditions compose [
 					(to paren! reduce ['select-deep 'item column]) (symbol) (value)
 				]
@@ -57,7 +64,7 @@ qobom: func [
 	find-rule: [
 		set column [lit-word! | lit-path!]
 		'contains
-		set value skip (
+		value-rule (
 			append conditions compose [
 				find select-deep item (column) (value)
 			]
@@ -66,7 +73,7 @@ qobom: func [
 	match-rule: [
 		set column [lit-word! | lit-path!]
 		'matches
-		set value skip (
+		value-rule (
 			append value [to end]
 			append conditions compose/deep [
 				parse select-deep item (column) [(value)]
@@ -77,7 +84,9 @@ qobom: func [
 		; TODO: `keep` is filler just now, should probably do something
 		; TODO: support multiple selectors
 		'keep
-		set selector [block! | lit-word! | lit-path!]
+		[
+			set selector ['* | block! | lit-word! | lit-path!]
+		]
 		'where
 	]
 
@@ -92,18 +101,26 @@ qobom: func [
 		]
 	]
 
+	select-column: func [selector item][
+		switch type?/word selector [
+			none! [item]
+			lit-word! lit-path! [select-deep item to path! selector]
+			block! [
+				collect [
+					foreach key selector [keep select-deep item to path! key]
+				]
+			]
+		]
+	]
+
 	collect [
-		probe conditions
+		;probe conditions
 		foreach item data [
 			if all conditions [
-				keep switch type?/word selector [
-					none! [item]
-					lit-word! lit-path! [select-deep item to path! selector]
-					block! [
-						collect [
-							foreach key selector [keep select-deep item to path! key]
-						]
-					]
+				either equal? '* selector [
+					keep/only item
+				][
+					keep select-column selector item
 				]
 			]
 		]
