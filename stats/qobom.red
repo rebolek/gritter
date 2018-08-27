@@ -29,8 +29,7 @@ select-deep: func [
 	]
 ]
 
-; TODO: support `sobom` directly from `qobom ;(and rename it)
-sobom: func [
+sort-by: func [
 	"Sort block of maps"
 	data
 	match-column
@@ -51,6 +50,46 @@ sobom: func [
 	to map! sort/skip/compare/reverse to block! result 2 2
 ]
 
+do-conditions: func [data conditions selector][
+	collect [
+		;probe conditions
+		foreach item data [
+			if all conditions [
+				either equal? '* selector [
+					keep/only item
+				][
+					keep select-column selector item
+				]
+			]
+		]
+	]
+]
+
+select-column: func [selector item][
+	switch type?/word selector [
+		none! [item]
+		lit-word! lit-path! [select-deep item to path! selector]
+		block! [
+			collect [
+				foreach key selector [keep select-deep item to path! key]
+			]
+		]
+	]
+]
+
+count-values: func [
+	"Count occurences of each value in DATA. Return map! with values as keys and count as values"
+	data
+	; TODO: support some refinement to return block! instead (or make it default?)
+	/local result
+][
+	result: copy #()
+	foreach value data [
+		result/:value: either result/:value [result/:value + 1][1]
+	]
+	to map! sort/skip/compare/reverse to block! result 2 2
+]
+
 qobom: func [
 	"Simple query dialect for filtering messages"
 	data
@@ -58,13 +97,13 @@ qobom: func [
 ;	/local
 ;		name-rule room-rule match-rule
 ;		conditions value selector
+;		result
 ][
 	conditions: clear []
 	value: none
 
 	value-rule: [
 		set value skip (
-			print "composing value"
 			if paren? value [value: compose value]
 		)
 	]
@@ -117,7 +156,17 @@ qobom: func [
 		]
 		'where
 	]
-
+	sort-rule: [
+		'sort 'by set value skip (
+			sort-by result value
+		)
+	]
+	do-cond-rule: [(
+		result: do-conditions data conditions selector
+	)]
+	count-rule: [
+		'count (result: count-values result)
+	]
 	parse dialect [
 		opt keep-rule
 		some [
@@ -127,30 +176,9 @@ qobom: func [
 		|	'and ; filler, so we can write [column contains something and column contains something-else] instead of [column contains something column contains something-else] (but both work)
 		; TODO: add `OR` rule
 		]
+		do-cond-rule
+;		opt sort-rule
+		opt count-rule
 	]
-
-	select-column: func [selector item][
-		switch type?/word selector [
-			none! [item]
-			lit-word! lit-path! [select-deep item to path! selector]
-			block! [
-				collect [
-					foreach key selector [keep select-deep item to path! key]
-				]
-			]
-		]
-	]
-
-	collect [
-		;probe conditions
-		foreach item data [
-			if all conditions [
-				either equal? '* selector [
-					keep/only item
-				][
-					keep select-column selector item
-				]
-			]
-		]
-	]
+	result
 ]
