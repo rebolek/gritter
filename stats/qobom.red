@@ -50,15 +50,24 @@ sort-by: func [
 	to map! sort/skip/compare/reverse to block! result 2 2
 ]
 
-do-conditions: func [data conditions selector][
+do-conditions: func [
+	data conditions selector type
+	/local value
+][
+	type: equal? map! type
 	collect [
-		;probe conditions
 		foreach item data [
 			if all conditions [
 				case [
-					equal? '* selector 	[keep/only item]
-					block? selector		[keep/only collect [foreach s selector [keep select-key item s]]]
-					'default			[keep select-key item selector]
+					equal? '* selector 	[keep/only either type [item][values-of item]]
+					block? selector		[
+						value: to map! collect [foreach s selector [keep reduce [s select-key item s]]]
+						keep/only either type [value][values-of value]
+					]
+					'default			[
+						value: select-key item selector
+						keep either type [to map! reduce [selector value]][value]
+					]
 				]
 			]
 		]
@@ -97,7 +106,7 @@ qobom: func [
 ;	/local
 ;		name-rule room-rule match-rule
 ;		conditions value selector
-;		result
+;		result keep-type
 ][
 	conditions: clear []
 	value: none
@@ -148,10 +157,10 @@ qobom: func [
 		)
 	]
 	keep-rule: [
+		(keep-type: block!)
 		'keep
-		[
-			set selector ['* | block! | lit-word! | lit-path!]
-		]
+		set selector ['* | block! | lit-word! | lit-path!]
+		opt ['as 'map (keep-type: map!)]
 		'where
 	]
 	sort-rule: [
@@ -160,7 +169,7 @@ qobom: func [
 		)
 	]
 	do-cond-rule: [(
-		result: do-conditions data conditions selector
+		result: do-conditions data conditions selector keep-type
 	)]
 	count-rule: [
 		'count (result: count-values result)
