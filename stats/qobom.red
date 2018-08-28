@@ -3,11 +3,11 @@ Red[
 	Author: "Boleslav Březovský"
 	Usage: {
 ```
-keep [ <column> or * ] where
-	<column> is <value>
-	<column> [ = < > <= >= ] <value>
-	<column> contains <value>
-	<column> matches <parse rule>
+keep [ <key> or * ] where
+	<key> is <value>
+	<key> [ = < > <= >= ] <value>
+	<key> contains <value>
+	<key> matches <parse rule>
 ```
 
 <value> can be `paren!` and then is evaluated first
@@ -32,15 +32,15 @@ select-deep: func [
 sort-by: func [
 	"Sort block of maps"
 	data
-	match-column
-;	keep-column ; TODO: support * for keeping everything 
+	match-key
+;	keep-key ; TODO: support * for keeping everything 
 ;	TODO: sorting order
 	/local result value
 ][
 ;	NOTE: How expensive is map!->block!->map! ? Is there other way?
 	result: clear #()
 	foreach item data [
-		value: item/:match-column
+		value: item/:match-key
 		result/:value: either result/:value [
 			result/:value + 1
 		][
@@ -57,15 +57,15 @@ do-conditions: func [data conditions selector][
 			if all conditions [
 				case [
 					equal? '* selector 	[keep/only item]
-					block? selector		[keep/only collect [foreach s selector [keep select-column item s]]]
-					'default			[keep select-column item selector]
+					block? selector		[keep/only collect [foreach s selector [keep select-key item s]]]
+					'default			[keep select-key item selector]
 				]
 			]
 		]
 	]
 ]
 
-select-column: func [item selector][
+select-key: func [item selector][
 	switch type?/word selector [
 		none! [item]
 		lit-word! lit-path! [select-deep item to path! selector]
@@ -109,47 +109,45 @@ qobom: func [
 	]
 
 	col-rule: [
-		set column [lit-word! | lit-path!]
+		set key [lit-word! | lit-path!]
 		[
 			'is 'from set value block! (
 				append conditions compose/deep [
-					find [(value)] select-deep item (column)
+					find [(value)] select-deep item (key)
 				]
 			)
 		|	['is | '=] value-rule (
 				append conditions compose [
-					equal? select-deep item (column) (value)
+					equal? select-deep item (key) (value)
 				]
 			)
 		|	set symbol ['< | '> | '<= | '>=] value-rule (
 				append conditions compose [
-					(to paren! reduce ['select-deep 'item column]) (symbol) (value)
+					(to paren! reduce ['select-deep 'item key]) (symbol) (value)
 				]
 			)
 		]
 	]
 	find-rule: [
-		set column [lit-word! | lit-path!]
+		set key [lit-word! | lit-path!]
 		'contains
 		value-rule (
 			append conditions compose [
-				find select-deep item (column) (value)
+				find select-deep item (key) (value)
 			]
 		)
 	]
 	match-rule: [
-		set column [lit-word! | lit-path!]
+		set key [lit-word! | lit-path!]
 		'matches
 		value-rule (
 			append value [to end]
 			append conditions compose/deep [
-				parse select-deep item (column) [(value)]
+				parse select-deep item (key) [(value)]
 			]
 		)
 	]
 	keep-rule: [
-		; TODO: `keep` is filler just now, should probably do something
-		; TODO: support multiple selectors
 		'keep
 		[
 			set selector ['* | block! | lit-word! | lit-path!]
@@ -168,12 +166,12 @@ qobom: func [
 		'count (result: count-values result)
 	]
 	parse dialect [
-		opt keep-rule
+		keep-rule
 		some [
 			col-rule
 		|	find-rule
 		|	match-rule
-		|	'and ; filler, so we can write [column contains something and column contains something-else] instead of [column contains something column contains something-else] (but both work)
+		|	'and ; filler, so we can write [key contains something and key contains something-else] instead of [key contains something key contains something-else] (but both work)
 		; TODO: add `OR` rule
 		]
 		do-cond-rule
