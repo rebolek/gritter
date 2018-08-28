@@ -55,17 +55,17 @@ do-conditions: func [data conditions selector][
 		;probe conditions
 		foreach item data [
 			if all conditions [
-				either equal? '* selector [
-					keep/only item
-				][
-					keep select-column selector item
+				case [
+					equal? '* selector 	[keep/only item]
+					block? selector		[keep/only collect [foreach s selector [keep select-column item s]]]
+					'default			[keep select-column item selector]
 				]
 			]
 		]
 	]
 ]
 
-select-column: func [selector item][
+select-column: func [item selector][
 	switch type?/word selector [
 		none! [item]
 		lit-word! lit-path! [select-deep item to path! selector]
