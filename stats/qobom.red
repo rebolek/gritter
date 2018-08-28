@@ -12,6 +12,19 @@ keep [ <key> or * ] where
 
 <value> can be `paren!` and then is evaluated first
 <value> can be `block!` and then is interpred as list of values that can match
+
+Support for expressions in count - see following example:
+
+>> qobom messages [keep ['author 'text] as map where 'sent > (now - 6:0:0) count by 'author (length? text)]
+== #(
+    "pekr" 1999
+    "9214" 116
+    "BeardPower" 69
+)
+
+NOTE: expression must return number to be counted (probably should add some checks)
+
+
 	}
 ]
 
@@ -89,12 +102,23 @@ select-key: func [item selector][
 count-values: func [
 	"Count occurences of each value in DATA. Return map! with values as keys and count as values"
 	data
+	/key 
+		name "Key to match"
+		action
 	; TODO: support some refinement to return block! instead (or make it default?)
-	/local result
+	/local result act-result 
 ][
 	result: copy #()
 	foreach value data [
-		result/:value: either result/:value [result/:value + 1][1]
+		either key [
+			; NOTE: I'm doing some black magic here to simplify the dialect
+			;		It's certainly not the fastest way and should be redone
+			act-result: do bind as block! action make object! to block! value
+			key-name: value/:name
+			result/:key-name: either result/:key-name [result/:key-name + act-result][act-result]
+		][
+			result/:value: either result/:value [result/:value + 1][1]
+		]
 	]
 	to map! sort/skip/compare/reverse to block! result 2 2
 ]
@@ -103,10 +127,10 @@ qobom: func [
 	"Simple query dialect for filtering messages"
 	data
 	dialect
-;	/local
-;		name-rule room-rule match-rule
-;		conditions value selector
-;		result keep-type
+	/local
+		name-rule room-rule match-rule
+		conditions value selector
+		result keep-type count-by?
 ][
 	conditions: clear []
 	value: none
@@ -172,7 +196,19 @@ qobom: func [
 		result: do-conditions data conditions selector keep-type
 	)]
 	count-rule: [
-		'count (result: count-values result)
+		'count (count-by?: no)
+		opt [
+			'by (count-by?: yes)
+			set key lit-word!
+			set value paren!
+		]
+		(
+			result: either count-by? [
+				count-values/key result key value
+			][
+				count-values result
+			]
+		)
 	]
 	parse dialect [
 		keep-rule
