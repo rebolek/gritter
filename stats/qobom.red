@@ -28,6 +28,7 @@ NOTE: expression must return number to be counted (probably should add some chec
 	}
 ]
 
+qobom!: context [
 select-deep: func [
 	series
 	value
@@ -123,12 +124,12 @@ count-values: func [
 	to map! sort/skip/compare/reverse to block! result 2 2
 ]
 
-qobom: func [
+set 'qobom func [
 	"Simple query dialect for filtering messages"
 	data
 	dialect
 	/local
-		name-rule room-rule match-rule
+		value-rule col-rule find-rule match-rule keep-rule sort-rule do-cond-rule count-rule
 		conditions value selector
 		result keep-type count-by?
 ][
@@ -224,4 +225,6 @@ qobom: func [
 		opt count-rule
 	]
 	result
+]
+; -- end of context
 ]
