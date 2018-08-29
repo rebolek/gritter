@@ -199,6 +199,7 @@ count-rule: [
 		]
 	)
 ]
+conditions: [col-rule | find-rule | match-rule]
 
 set 'qobom func [
 	"Simple query dialect for filtering messages"
@@ -213,15 +214,9 @@ set 'qobom func [
 
 	parse dialect [
 		keep-rule
-		some [
-			col-rule
-		|	find-rule
-		|	match-rule
-		|	'and ; filler, so we can write [key contains something and key contains something-else] instead of [key contains something key contains something-else] (but both work)
-		; TODO: add `OR` rule
-		]
+		conditions
+		any ['and conditions]
 		do-cond-rule
-;		opt sort-rule
 		opt count-rule
 	]
 	result
