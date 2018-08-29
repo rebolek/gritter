@@ -16,6 +16,8 @@ redquire [json http-tools]
 
 gitter: context [
 
+token: none
+
 verbose?: false ; force verbose mode
 
 any-map?: func [

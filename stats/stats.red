@@ -36,7 +36,7 @@ do-thru https://rebolek.com/redquire
 redquire 'csv
 
 do %../gitter-tools.red
-do %../options.red
+gitter/token: load %../options.red
 
 do %qobom.red ; TODO: use REDQUIRE
 

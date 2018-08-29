@@ -21,10 +21,10 @@ do %marky-mark.red
 
 system/view/auto-sync?: false
 
-either exists? %options.red [
-	do load %options.red
+gitter/token: either exists? %options.red [
+	load %options.red
 ] [
-	token: ask "Please, type your Gitter token (you can get one at https://developer.gitter.im/apps): "
+	ask "Please, type your Gitter token (you can get one at https://developer.gitter.im/apps): "
 ]
 
 ; ----------------------------------------------------------------------------
@@ -79,7 +79,6 @@ unless value? 'rejoin [
 ; ----------------------------------------------------------------------------
 
 gritter: context [
-	; TODO: token here?
 	info: none
 	user-id: none
 	room-ids: none
@@ -390,5 +389,5 @@ show-messages: function [
 gritter/init
 
 if not exists? %options.red [					;-- No need to save every time, token does not change often
-	save %options.red compose [token: (token)]
+	save %options.red compose [token: (gitter/token)]
 ]
