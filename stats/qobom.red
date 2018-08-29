@@ -124,93 +124,93 @@ count-values: func [
 	to map! sort/skip/compare/reverse to block! result 2 2
 ]
 
+value-rule: [
+	set value skip (
+		if paren? value [value: compose value]
+	)
+]
+
+col-rule: [
+	set key [lit-word! | lit-path!]
+	[
+		'is 'from set value block! (
+			append conditions compose/deep [
+				find [(value)] select-deep item (key)
+			]
+		)
+	|	['is | '=] value-rule (
+			append conditions compose [
+				equal? select-deep item (key) (value)
+			]
+		)
+	|	set symbol ['< | '> | '<= | '>=] value-rule (
+			append conditions compose [
+				(to paren! reduce ['select-deep 'item key]) (symbol) (value)
+			]
+		)
+	]
+]
+find-rule: [
+	set key [lit-word! | lit-path!]
+	'contains
+	value-rule (
+		append conditions compose [
+			find select-deep item (key) (value)
+		]
+	)
+]
+match-rule: [
+	set key [lit-word! | lit-path!]
+	'matches
+	value-rule (
+		append value [to end]
+		append conditions compose/deep [
+			parse select-deep item (key) [(value)]
+		]
+	)
+]
+keep-rule: [
+	(keep-type: block!)
+	'keep
+	set selector ['* | block! | lit-word! | lit-path!]
+	opt ['as 'map (keep-type: map!)]
+	'where
+]
+sort-rule: [
+	'sort 'by set value skip (
+		sort-by result value
+	)
+]
+do-cond-rule: [(
+	result: do-conditions data conditions selector keep-type
+)]
+count-rule: [
+	'count (count-by?: no)
+	opt [
+		'by (count-by?: yes)
+		set key lit-word!
+		set value paren!
+	]
+	(
+		result: either count-by? [
+			count-values/key result key value
+		][
+			count-values result
+		]
+	)
+]
+
 set 'qobom func [
 	"Simple query dialect for filtering messages"
 	data
 	dialect
 	/local
-		value-rule col-rule find-rule match-rule keep-rule sort-rule do-cond-rule count-rule
 		conditions value selector
 		result keep-type count-by?
 ][
 	conditions: clear []
 	value: none
 
-	value-rule: [
-		set value skip (
-			if paren? value [value: compose value]
-		)
-	]
-
-	col-rule: [
-		set key [lit-word! | lit-path!]
-		[
-			'is 'from set value block! (
-				append conditions compose/deep [
-					find [(value)] select-deep item (key)
-				]
-			)
-		|	['is | '=] value-rule (
-				append conditions compose [
-					equal? select-deep item (key) (value)
-				]
-			)
-		|	set symbol ['< | '> | '<= | '>=] value-rule (
-				append conditions compose [
-					(to paren! reduce ['select-deep 'item key]) (symbol) (value)
-				]
-			)
-		]
-	]
-	find-rule: [
-		set key [lit-word! | lit-path!]
-		'contains
-		value-rule (
-			append conditions compose [
-				find select-deep item (key) (value)
-			]
-		)
-	]
-	match-rule: [
-		set key [lit-word! | lit-path!]
-		'matches
-		value-rule (
-			append value [to end]
-			append conditions compose/deep [
-				parse select-deep item (key) [(value)]
-			]
-		)
-	]
-	keep-rule: [
-		(keep-type: block!)
-		'keep
-		set selector ['* | block! | lit-word! | lit-path!]
-		opt ['as 'map (keep-type: map!)]
-		'where
-	]
-	sort-rule: [
-		'sort 'by set value skip (
-			sort-by result value
-		)
-	]
-	do-cond-rule: [(
-		result: do-conditions data conditions selector keep-type
-	)]
-	count-rule: [
-		'count (count-by?: no)
-		opt [
-			'by (count-by?: yes)
-			set key lit-word!
-			set value paren!
-		]
-		(
-			result: either count-by? [
-				count-values/key result key value
-			][
-				count-values result
-			]
-		)
-	]
 	parse dialect [
 		keep-rule
 		some [
