@@ -71,7 +71,7 @@ do-conditions: func [
 	type: equal? map! type
 	collect [
 		foreach item data [
-			if all conditions [
+			if any conditions [
 				case [
 					equal? '* selector 	[keep/only either type [item][values-of item]]
 					block? selector		[
@@ -124,6 +124,12 @@ count-values: func [
 	to map! sort/skip/compare/reverse to block! result 2 2
 ]
 
+add-condition: func [
+	condition
+][
+	append group condition
+]
+
 value-rule: [
 	set value skip (
 		if paren? value [value: compose value]
@@ -134,17 +140,17 @@ col-rule: [
 	set key [lit-word! | lit-path!]
 	[
 		'is 'from set value block! (
-			append conditions compose/deep [
+			add-condition compose/deep [
 				find [(value)] select-deep item (key)
 			]
 		)
 	|	['is | '=] value-rule (
-			append conditions compose [
+			add-condition compose [
 				equal? select-deep item (key) (value)
 			]
 		)
 	|	set symbol ['< | '> | '<= | '>=] value-rule (
-			append conditions compose [
+			add-condition compose [
 				(to paren! reduce ['select-deep 'item key]) (symbol) (value)
 			]
 		)
@@ -154,7 +160,7 @@ find-rule: [
 	set key [lit-word! | lit-path!]
 	'contains
 	value-rule (
-		append conditions compose [
+		add-condition compose [
 			find select-deep item (key) (value)
 		]
 	)
@@ -164,7 +170,7 @@ match-rule: [
 	'matches
 	value-rule (
 		append value [to end]
-		append conditions compose/deep [
+		add-condition compose/deep [
 			parse select-deep item (key) [(value)]
 		]
 	)
@@ -181,9 +187,6 @@ sort-rule: [
 		sort-by result value
 	)
 ]
-do-cond-rule: [(
-	result: do-conditions data conditions selector keep-type
-)]
 count-rule: [
 	'count (count-by?: no)
 	opt [
@@ -199,23 +202,45 @@ count-rule: [
 		]
 	)
 ]
-conditions: [col-rule | find-rule | match-rule]
+conditions-rule: [col-rule | find-rule | match-rule]
+do-cond-rule: [(
+	repend conditions ['all group]
+	result: do-conditions data-block conditions selector keep-type
+)]
+
+conditions: []
+group: none
+data-block: none
+result: none
+value: none
+key: none
 
 set 'qobom func [
 	"Simple query dialect for filtering messages"
 	data
 	dialect
 	/local
-		conditions value selector
-		result keep-type count-by?
+		selector
+		keep-type count-by?
 ][
-	conditions: clear []
-	value: none
+	data-block: data
+	clear conditions 
+	value: result: none
+	group: copy []
 
 	parse dialect [
 		keep-rule
-		conditions
-		any ['and conditions]
+		conditions-rule
+		any [
+			['and conditions-rule]
+		|	[
+				'or (
+					repend conditions ['all group]
+					group: copy []
+				)
+				conditions-rule
+			]
+		]
 		do-cond-rule
 		opt count-rule
 	]
