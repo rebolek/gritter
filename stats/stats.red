@@ -577,7 +577,7 @@ prepare-environment: func [
 		in-path %red/ in-path %red/rooms/ in-path %red/users
 		in-path %csv/ in-path %csv/rooms/ in-path %csv/users
 		in-path %json/ in-path %json/rooms/ in-path %json/users
-		in-path %rooms/
+		%rooms/
 	]
 	foreach dir dirs [
 		unless exists? dir [
