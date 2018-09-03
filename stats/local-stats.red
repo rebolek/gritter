@@ -36,3 +36,10 @@ activity: make map! compose [
 	total: (sum values-of top-chatters/total)
 ]
 
+unique-activity: make map! compose [
+	last-day: (length? unique words-of top-chatters/last-day)
+	last-3days: (length? unique words-of top-chatters/last-3days)
+	last-7days: (length? unique words-of top-chatters/last-7days)
+	last-30days: (length? unique words-of top-chatters/last-30days)
+	total: (length? unique words-of top-chatters/total)
+]
