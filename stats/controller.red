@@ -39,5 +39,8 @@ run-download: func [
 		status: load %status
 		status/finished?
 	]
+	print ["Data downloaded"]
 ]
 
+init-download
+run-download
