@@ -544,19 +544,26 @@ find-answer: func [
 
 get-data: func [
 	"Download and/or update rooms (also fills `rooms`)"
+	/verbose
 	/local groups group-id group-rooms
 ][
+	prepare-environment
 	groups: gitter/get-groups
 	foreach group groups [if equal? group/name "red" [group-id: group/id]]
 	group-rooms: gitter/group-rooms group-id
-	unless exists? %rooms/ [make-dir %rooms/] ; TODO: move to prepare-environment
 	foreach room group-rooms [
 		rooms/(room/id): room
-		if room/public [download-room/compact/verbose to path! room/name]
+		if room/public [
+			if verbose [
+				download-room/compact/verbose to path! room/name
+			][
+				download-room/compact to path! room/name
+			]
+		]
 		save rejoin [%rooms/ room/id %.red] room
 	]
 	; FIXME: when #3223 is fixed, remove this
-	workaround-3223
+	; workaround-3223
 ]
 
 prepare-environment: func [
@@ -570,6 +577,7 @@ prepare-environment: func [
 		in-path %red/ in-path %red/rooms/ in-path %red/users
 		in-path %csv/ in-path %csv/rooms/ in-path %csv/users
 		in-path %json/ in-path %json/rooms/ in-path %json/users
+		in-path %rooms/
 	]
 	foreach dir dirs [
 		unless exists? dir [
