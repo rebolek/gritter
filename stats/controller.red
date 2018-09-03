@@ -36,7 +36,7 @@ run-download: func [
 		; NOTE: This expects RED to be in your path.
 		; TODO: Add some settings and maybe a test for RED present in path
 		call/wait "red download.red"
-		status: load %status
+		status: construct load %status
 		status/finished?
 	]
 	print ["Data downloaded"]
