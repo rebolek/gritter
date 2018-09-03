@@ -239,9 +239,12 @@ get-messages: function [
 get-message: function [
 	room 	"Room object or ID"
 	id 		"Message ID"
+	/local message
 ] [
 	room: get-id room
-	send [%rooms room %chatMessages id]
+	message: send [%rooms room %chatMessages id]
+	message/sent: load message/sent
+	message
 ]
 
 send-message: function [
