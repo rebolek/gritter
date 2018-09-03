@@ -57,6 +57,9 @@ response: none
 remaining-requests: 100
 next-reset: (to integer! now) - 1
 
+; TODO: store verbose output somewhere
+info: func [value][if verbose? [print value]]
+
 send: func [
 	data
 	"Send GET request to gitter API"
@@ -69,15 +72,14 @@ send: func [
 	/local
 		call method link header ts print print* nowi
 ] [
-	print*: :system/words/print
-	print: func [value][if any [verbose verbose?] [print* value]]
+	if verbose [verbose?: true]
 	method: case [
 		post   ['POST]
 		put    ['PUT]
 		delete ['DELETE]
 		true   ['GET]
 	]
-	print ["Send/method:" method "data:" data "add.data:" any [post-data put-data]]
+	info ["Send/method:" method "data:" data "add.data:" any [post-data put-data]]
 	link: make-url compose [https://api.gitter.im/v1/ (data)]
 	header: [
 		Accept: "application/json"
@@ -90,7 +92,7 @@ send: func [
 		remaining-requests < 2
 		0 < till-reset: next-reset - to integer! now
 	][
-		print ["Rate limit reached. Waiting" till-reset "seconds..."]
+		info ["Rate limit reached. Waiting" till-reset "seconds..."]
 		wait till-reset
 	]
 	response: send-request/data/with/auth link method post-data header 'Bearer token
@@ -112,9 +114,9 @@ send: func [
 			; wait until next reset when applicable
 			nowi: to integer! now
 			either next-reset >= nowi [
-				print ["Error 401: Need to wait for" next-reset - nowi "seconds."]
+				info ["Error 401: Need to wait for" next-reset - nowi "seconds."]
 				wait next-reset - nowi + 1
-				print "Wait over."
+				info "Wait over."
 				call: [send]
 				unless equal? 'get method [
 					call/1: make path! call/1
@@ -130,7 +132,7 @@ send: func [
 		]
 	][
 		; TODO: what else can happen?
-		print ["Return code: " response/code]
+		info ["Return code: " response/code]
 		response/data
 	]
 	response/data
