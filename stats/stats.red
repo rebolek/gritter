@@ -554,7 +554,7 @@ get-data: func [
 	foreach room group-rooms [
 		rooms/(room/id): room
 		if room/public [
-			if verbose [
+			either verbose [
 				download-room/compact/verbose to path! room/name
 			][
 				download-room/compact to path! room/name

@@ -91,7 +91,7 @@ download-room: func [
 	; some preparation
 	info: func [value /no-line] [if verbose [either no-line [prin value][print value]]]
 	if path? room [room: gitter/get-room-info room]
-	unless exists? %messages/ [make-dir %messages/]
+	unless exists? %messages/ [make-dir %messages/] ; TODO: This shouldn't be here
 	unless to [
 		filename: rejoin [%messages/ room/id %.red]
 	]
