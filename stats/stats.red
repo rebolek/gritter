@@ -643,8 +643,7 @@ print [
 	newline
 	"Usage:" newline
 	newline
-	"* get-data - downloads new messages" newline
-	"* get-stats - create csv files for web" newline
+	"* get-data   - downloads new messages" newline
+	"* get-stats  - create csv files for web" newline
+	"* init-rooms - load MESSAGES from disk to memory" newline
 ]
-; get-data ; downloads new messages
-; get-stats ; create csv files for web
