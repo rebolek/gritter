@@ -89,13 +89,13 @@ download-room: func [
 ] [
 	ret: copy []
 	; some preparation
-	info: func [value] [if verbose [print value]]
+	info: func [value /no-line] [if verbose [either no-line [prin value][print value]]]
 	if path? room [room: gitter/get-room-info room]
 	unless exists? %messages/ [make-dir %messages/]
 	unless to [
 		filename: rejoin [%messages/ room/id %.red]
 	]
-	info ["^/Download messages for room" room/name]
+	info/no-line ["^/Download messages for room" room/name "..."]
 	; load cached messages, when required
 	either with [
 		ret: cache
@@ -103,9 +103,9 @@ download-room: func [
 		info ["Checking cached file" filename]
 		if all [not force exists? filename] [
 			t: now/time/precise
-			info ["Loading file" filename "..."]
+			info/no-line ["Loading file" filename "..."]
 			ret: append copy [] load filename
-			info ["File" filename "with" length? ret "messages was loaded in" now/time/precise - t]
+			info [length? ret "messages w loaded in" now/time/precise - t]
 		]
 	]
 
@@ -126,9 +126,9 @@ download-room: func [
 
 		write filename mold/only ret
 		until [
-			info ["Downloading messages before" ret/1/sent]
+			info/no-line ["Downloading messages before" ret/1/sent "..."]
 			ret: gitter/get-messages/with room [beforeId: last-id]
-			info ["Downloaded" length? ret "messages."]
+			info [length? ret "messages downloaded."]
 			if compact [foreach message ret [strip-message message]]
 			unless empty? ret [
 				last-id: ret/1/id
@@ -146,13 +146,13 @@ download-room: func [
 
 		; now we will download messages in loop until we have all new messages
 		until [
-			info ["Downloading messages posted after" ret/1/sent]
+			info/no-line ["Downloading messages posted after" ret/1/sent "..."]
 			; NOTE: [afterId] returns messages from oldest to newest, so we need
 			;		to reverse the order, to have same format as cached messages
 			messages: reverse gitter/get-messages/with
 				room
 				compose [afterId: (ret/1/id)]
-			info ["Downloaded" length? messages "messages."]
+			info [length? messages "messages downloaded."]
 			if compact [foreach message ret [strip-message message]]
 			insert ret messages ; we may be inserting empty block, but who cares
 			empty? messages
