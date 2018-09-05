@@ -75,7 +75,7 @@ do-conditions: func [
 				case [
 					equal? '* selector 	[keep/only either type [item][values-of item]]
 					block? selector		[
-						value: to map! collect [foreach s selector [keep reduce [s select-key item s]]]
+						value: to map! collect [foreach s selector [keep reduce [s select-key item to lit-word! s]]]
 						keep/only either type [value][values-of value]
 					]
 					'default			[
