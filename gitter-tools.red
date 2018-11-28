@@ -105,7 +105,7 @@ download-room: func [
 			t: now/time/precise
 			info/no-line ["Loading file" filename "..."]
 			ret: append copy [] load filename
-			info [length? ret "messages w loaded in" now/time/precise - t]
+			info [length? ret "messages loaded in" now/time/precise - t]
 		]
 	]
 

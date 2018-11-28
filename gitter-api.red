@@ -2,17 +2,19 @@ Red [
 	Title: "Gitter API"
 	Author: "Boleslav Březovský"
 	File: %gitter-api.red
-	Rights: "Copyright (C) 2016 Boleslav Březovský. All rights reserved."
+	Rights: "Copyright © 2016-2018 Boleslav Březovský. All rights reserved."
 	License: {
 		Distributed under the Boost Software License, Version 1.0.
 	}
 	Date: "23-10-2016"
 	Note: {
+This link returns non-UTF8 data: https://api.gitter.im/v1/rooms/572d874bc43b8c6019719620/chatMessages?beforeId=5aede3eeff26986d0835ca5e 
 	}
 ]
 
 do https://rebolek.com/redquire
 redquire [json http-tools]
+do %/home/sony/Code/red-tools/http-tools.red
 
 gitter: context [
 
@@ -81,7 +83,7 @@ send: func [
 	]
 	info ["Send/method:" method "data:" data "add.data:" any [post-data put-data]]
 	link: make-url compose [https://api.gitter.im/v1/ (data)]
-	header: [
+	append header: clear [] [
 		Accept: "application/json"
 	]
 	if any [post put] [
@@ -232,7 +234,9 @@ get-messages: function [
 	; so we need to make sure that block! is returned in all cases
 	unless block? messages [messages: reduce [messages]]
 	; Do date conversion. TODO: avatarUrl conversion (would probably need some checks)
-	foreach message messages [message/sent: load message/sent]
+	foreach message messages [
+		message/sent: load message/sent
+	]
 	messages
 ]
 
