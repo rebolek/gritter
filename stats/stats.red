@@ -303,7 +303,9 @@ init-users: func [
 			users/:name: copy/deep user-cache/:name
 		]
 		; add current message to user
-		append users/:name/messages message
+		if select users/:name 'messages [
+			append users/:name/messages message
+		]
 	]
 	save %users.red user-cache
 	users
