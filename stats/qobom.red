@@ -29,6 +29,7 @@ NOTE: expression must return number to be counted (probably should add some chec
 ]
 
 qobom!: context [
+time: none
 select-deep: func [
 	series
 	value
@@ -135,8 +136,14 @@ value-rule: [
 		if paren? value [value: compose value]
 	)
 ]
-
+reflector-rule: [
+	(reflector: none)
+	set value skip 'in (
+		reflector: value
+	)
+]
 col-rule: [
+	opt reflector-rule
 	set key [lit-word! | lit-path!]
 	[
 		'is 'from set value block! (
@@ -145,8 +152,14 @@ col-rule: [
 			]
 		)
 	|	['is | '=] value-rule (
-			add-condition compose [
-				equal? select-deep item (key) (value)
+			either reflector [
+				add-condition compose [
+					equal? (to paren! compose [t: select-deep item (key)]) (value)
+				]
+			][
+				add-condition compose [
+					equal? select-deep item (key) (value)
+				]
 			]
 		)
 	|	set symbol ['< | '> | '<= | '>=] value-rule (
@@ -214,6 +227,8 @@ data-block: none
 result: none
 value: none
 key: none
+reflector: none
+t: none
 
 set 'qobom func [
 	"Simple query dialect for filtering messages"
@@ -222,7 +237,9 @@ set 'qobom func [
 	/local
 		selector
 		keep-type count-by?
+		t
 ][
+	t: now/time/precise
 	data-block: data
 	clear conditions 
 	value: result: none
@@ -244,6 +261,7 @@ set 'qobom func [
 		do-cond-rule
 		opt count-rule
 	]
+	time: now/time/precise - t
 	result
 ]
 ; -- end of context
