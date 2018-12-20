@@ -177,8 +177,16 @@ store: func [
 ]
 
 ; todo add order, do all in refirements
-sort-by-value: func [this that][this/2 > that/2]
-sort-by-key: func [this that][this/1 < that/1]
+sort-by-value: func [this that][
+	unless this/2 [return false]
+	unless that/2 [return true]
+	this/2 > that/2
+]
+sort-by-key: func [this that][
+	unless this/1 [return false]
+	unless that/1 [return true]
+	this/1 < that/1
+]
 
 sort-by: func [
 	/key
@@ -344,7 +352,7 @@ init-code: func [][
 
 get-user-info: func [
 	name
-	/local messages comparator days rooms day room user
+	/local messages comparator days rooms day room user first-msg
 ][
 {
 	Users stats:
@@ -354,25 +362,27 @@ get-user-info: func [
 		top rooms (absolute/percentage)
 }
 	user: users/:name
-	messages: select user 'messages
 	comparator: func [this that][this/sent < that/sent]
-	sort/compare messages :comparator
-
 	days: copy #()
 	rooms: copy #()
-	log ["Checking messages for" name]
-	foreach message messages [
-		day: message/sent/date
-		room: message/room
-		either days/:day [days/:day: days/:day + 1][days/:day: 1]
-		either rooms/:room [rooms/:room: rooms/:room + 1][rooms/:room: 1]
+
+	if messages: select user 'messages [
+		sort/compare messages :comparator
+		log ["Checking messages for" name]
+		foreach message messages [
+			day: message/sent/date
+			room: message/room
+			either days/:day [days/:day: days/:day + 1][days/:day: 1]
+			either rooms/:room [rooms/:room: rooms/:room + 1][rooms/:room: 1]
+		]
+		first-msg: messages/1/sent
 	]
 	context compose [
 		name: (name)
 		id: (user/id)
-		first: (messages/1/sent)
+		first: (first-msg)
 		total: (length? messages)
-		avatar: (user/avatars/full)
+		avatar: (select user/avatars 'full)
 ;		avatar_small: (user/avatars/small)
 ;		avatar_medium: (user/avatars/medium)
 		days: (to map! sort/skip/compare/reverse to block! days 2 2) ; NOTE: use map! here?
@@ -403,15 +413,17 @@ get-top-users: func [
 ][
 	log/level "Get top users" 'title
 	; get top20 users by messags
-	top-messages: sort/compare collect [
+	top-messages: sort/compare t1: collect [
 		foreach user words-of users [keep/only reduce [user length? users/:user/messages]]
 	] :sort-by-value
 	store %top20-messages head insert/only copy/part top-messages 20 ["name" "count"]
-	top-chars: sort/compare collect [
+	top-chars: sort/compare t2: collect [
 		foreach user words-of users [
 			count: 0
-			foreach m users/:user/messages [count: count + length? m/text]
-			keep/only reduce [user count]
+			if select users/:user 'messages [
+				foreach m users/:user/messages [count: count + length? m/text]
+				keep/only reduce [user count]
+			]
 		]
 	] :sort-by-value
 	store %top20-chars head insert/only copy/part top-chars 20 ["name" "count"]
