@@ -325,10 +325,10 @@ draw-avatar: function [
 	height
 ] [
 	avatar-path: 'avatars/username
-	avatar-path/2: to word! message/fromUser/username
-	name: to word! message/fromUser/username
+	avatar-path/2: message/fromUser/username
+	name: message/fromUser/username
 	unless avatars/:name [
-		repend avatars [to word! message/fromUser/username load to url! message/fromUser/avatarUrlSmall]
+		repend avatars [message/fromUser/username load to url! message/fromUser/avatarUrlSmall]
 	]
 	; color: average-color avatars/:name
 	size: either height < 50 [30x30] [50x50]
