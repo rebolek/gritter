@@ -90,21 +90,39 @@ win: layout [
 		]
 		face/image: none
 		face/color: none
-		face/extra/redraw
+		face/extra/redraw face
 	]
 
 	style scroller: base 20x200 on-create [
 		face/color: none
-		radius: face/size/x / 2 - 2
-		face/draw: compose/deep [
-			fill-pen black
-			box 2x2 (face/size - 2)
-			pen white
-			shape [
-				move (as-pair 2 radius + 2)
-				arc (as-pair face/size/x - 2 radius + 2) (radius) (radius) 0 sweep
+		face/extra: context [
+			offset: 2
+			start: 20
+			height: 50
+			radius: face/size/x / 2 - offset
+			redraw: func [face][
+				face/draw: probe compose/deep [
+					pen white
+					fill-pen 218.221.223
+					shape [
+						move (as-pair offset radius + offset)
+						arc (as-pair face/size/x - offset - 1 radius + offset) (radius) (radius) 0 sweep
+						vline (face/size/y - radius - offset - 1)
+						arc (as-pair offset face/size/y - radius - offset - 1) (radius) (radius) 0 sweep
+					]
+					line-width 3
+					pen white
+					fill-pen 116.127.141
+					shape [
+						move (as-pair offset radius + start)
+						arc (as-pair face/size/x - offset - 1 radius + start) (radius) (radius) 0 sweep
+						vline (start + height)
+						arc (as-pair offset start + height) (radius) (radius) 0 sweep
+					]
+				]
 			]
 		]
+		face/extra/redraw face
 	]
 
 ; ------------------------------------------------------------------------- ;
@@ -120,7 +138,7 @@ win: layout [
 		circle 15x15 188.145.59
 		circle 18x18 47.152.65
 		return
-		a: avatar %avatar1.png	
+		a: avatar %avatar1.png 50x50	
 	]
 	panel 200x300 54.57.62 [
 		below
@@ -130,7 +148,7 @@ win: layout [
 	panel 300x300 white [
 		at 0x30 shadow-bar 236.236.236
 		at 10x240 draw-field 280x50
-		at 280x35 scroller 20x265
+		at 280x35 scroller 15x200
 
 	]
 ]
