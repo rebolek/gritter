@@ -6,7 +6,7 @@ Red [
 	License: {
 		Distributed under the Boost Software License, Version 1.0.
 	}
-	Date: "23-10-2016"
+	Date: "28-10-2016"
 	Note: {
 	}
 ]
@@ -93,14 +93,21 @@ gritter: context [
 	]
 	
 	init: func [
-		/local rooms chat
+		/local rooms chat newmessage
 	] [
 		view/no-wait main-lay
 		info: gitter/user-info
 		user-id: info/id
 		rooms: gitter/user-rooms user-id
 		data-rooms: collect [
-			foreach room rooms [keep room/name]
+			foreach room rooms [
+				newmessage: either room/activity [copy "MSG> "][copy ""]
+				either room/oneToOne [
+					keep rejoin [newmessage room/user/username " - " room/name]
+				] [
+					keep rejoin [newmessage "[R] " room/name]
+				]
+			]
 		]
 		room-ids: collect [
 			foreach room rooms [keep room/id]
