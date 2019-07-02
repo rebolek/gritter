@@ -2,10 +2,8 @@ Red [
 	Title: "Gritter - Red Gitter client"
 	Author: "Boleslav Březovský"
 	File: %gritter.red
-	Rights: "Copyright (C) 2016 Boleslav Březovský. All rights reserved."
-	License: {
-		Distributed under the Boost Software License, Version 1.0.
-	}
+	Rights: "Copyright (C) 2016-2019 Boleslav Březovský. All rights reserved."
+	License: 'BSD
 	Date: "23-10-2016"
 	Note: {
 	}
