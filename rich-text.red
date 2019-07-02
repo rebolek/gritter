@@ -2,10 +2,8 @@ Red [
 	Title: "Rich Text Dialect"
 	Author: "Boleslav Březovský"
 	File: %rich-text.red
-	Rights: "Copyright (C) 2016 Boleslav Březovský. All rights reserved."
-	License: {
-		Distributed under the Boost Software License, Version 1.0.
-	}
+	Rights: "Copyright (C) 2019 Boleslav Březovský. All rights reserved."
+	License: 'BSD
 	Date: "23-10-2016"
 	Note: {
 		Rich Text Dialect takes Lest source and converts it to Draw dialect

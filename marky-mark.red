@@ -2,10 +2,8 @@ Red [
 	Title: "Marky Mark"
 	Author: "Boleslav Březovský"
 	File: %marky-mark.red
-	Rights: "Copyright (C) 2016 Boleslav Březovský. All rights reserved."
-	License: {
-		Distributed under the Boost Software License, Version 1.0.
-	}
+	Rights: "Copyright (C) 2019 Boleslav Březovský. All rights reserved."
+	License: 'BSD
 	Date: "23-10-2016"
 	Note: {
 		This is very basic MarkDown parser just for use in the Red Gitter client.
