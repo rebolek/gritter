@@ -33,31 +33,31 @@ gitter/token: either exists? %options.red [
 gritter: context [
 	info: none
 	user-id: none
-	room-ids: none
-	data-rooms: none
 	data-chat: none
-	room-id: func [] [
-		either all [room-ids list-rooms/selected] [
-			pick room-ids list-rooms/selected
-		] [
-			first room-ids
+	rooms: #()
+	room-id: func [
+	][
+		select rooms either list-rooms/selected [
+			pick list-rooms/data list-rooms/selected
+		][
+			first keys-of rooms
 		]
 	]
 	
 	init: func [
-		/local rooms chat
+		/local local-rooms chat
 	] [
 		view/no-wait main-lay
 		info: gitter/user-info
 		user-id: info/id
-		rooms: gitter/user-rooms user-id
-		data-rooms: collect [
-			foreach room rooms [keep room/name]
-		]
+		local-rooms: gitter/user-rooms user-id
 		room-ids: collect [
-			foreach room rooms [keep room/id]
+			foreach room local-rooms [keep room/id]
 		]
-		list-rooms/data: data-rooms
+		foreach room local-rooms [
+			put rooms room/name room/id
+		]
+		list-rooms/data: sort keys-of rooms ; TODO: split into users and rooms
 		list-rooms/selected: 1 ; TODO: remember last selection
 		show main-lay
 		messages: gitter/get-messages room-id
@@ -165,7 +165,7 @@ gritter: context [
 			]
 
 		group-box 220x370 "Rooms" [
-			list-rooms: text-list 200x350 data data-rooms [
+			list-rooms: text-list 200x350 [
 				refresh/force list-chat
 			]
 		]
@@ -208,7 +208,6 @@ make-fonts [
 para: make para! [wrap: on]
 
 avatars: copy []
-
 
 draw-header: function [
 	message
