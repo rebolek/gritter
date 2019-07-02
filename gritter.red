@@ -45,19 +45,19 @@ gritter: context [
 	]
 	
 	init: func [
-		/local local-rooms chat
+		/local user-rooms chat room-names user-names
 	] [
 		view/no-wait main-lay
 		info: gitter/user-info
 		user-id: info/id
-		local-rooms: gitter/user-rooms user-id
-		room-ids: collect [
-			foreach room local-rooms [keep room/id]
-		]
-		foreach room local-rooms [
+		user-rooms: gitter/user-rooms user-id
+		room-names: copy []
+		user-names: copy []
+		foreach room user-rooms [
 			put rooms room/name room/id
+			append either room/oneToOne [user-names][room-names] room/name
 		]
-		list-rooms/data: sort keys-of rooms ; TODO: split into users and rooms
+		list-rooms/data: compose [(sort room-names) (sort user-names)]
 		list-rooms/selected: 1 ; TODO: remember last selection
 		show main-lay
 		messages: gitter/get-messages room-id
