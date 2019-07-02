@@ -2,10 +2,8 @@ Red [
 	Title: "Gitter API"
 	Author: "Boleslav Březovský"
 	File: %gitter-api.red
-	Rights: "Copyright © 2016-2018 Boleslav Březovský. All rights reserved."
-	License: {
-		Distributed under the Boost Software License, Version 1.0.
-	}
+	Rights: "Copyright © 2016-2019 Boleslav Březovský. All rights reserved."
+	License: 'BSD
 	Date: "23-10-2016"
 	Note: {
 This link returns non-UTF8 data: https://api.gitter.im/v1/rooms/572d874bc43b8c6019719620/chatMessages?beforeId=5aede3eeff26986d0835ca5e 
@@ -13,7 +11,7 @@ This link returns non-UTF8 data: https://api.gitter.im/v1/rooms/572d874bc43b8c60
 ]
 
 do https://rebolek.com/redquire
-redquire [json http-tools]
+redquire 'http-tools
 
 gitter: context [
 
