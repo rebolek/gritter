@@ -22,9 +22,26 @@ system/view/auto-sync?: false
 
 gitter/token: either exists? %options.red [
 	load %options.red
-] [
-	ask "Please, type your Gitter token (you can get one at https://developer.gitter.im/apps): "
+][
+	input-gitter-token
 ]
+
+input-gitter-token: func [
+	/local token f
+][
+	token: none
+	view [
+		below
+		text 500 "Please, type your Gitter token^/(you can get one at https://developer.gitter.im/apps): "
+		f: field 500
+		button "Ok" [
+			token: f/text
+			unview
+		]
+	]
+	token
+]
+
 
 ; ----------------------------------------------------------------------------
 ;		GUI
@@ -182,6 +199,7 @@ gritter: context [
 		]
 		return
 		area-input: area 680x100 ; [probe face/text]
+		below
 		button "Send" [
 			unless empty? area-input/text [
 				gitter/send-message room-id area-input/text
@@ -189,6 +207,9 @@ gritter: context [
 				show area-input
 				refresh/force list-chat
 			]
+		]
+		button "Refresh" [
+				refresh/force list-chat
 		]
 		button "Info" [
 			pane-height: 0
