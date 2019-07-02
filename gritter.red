@@ -5,6 +5,7 @@ Red [
 	Rights: "Copyright (C) 2016-2019 Boleslav Březovský. All rights reserved."
 	License: 'BSD
 	Date: "23-10-2016"
+	Needs: 'View
 	Note: {
 	}
 ]
