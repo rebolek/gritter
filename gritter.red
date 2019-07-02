@@ -20,12 +20,6 @@ do %gui-tools.red
 
 system/view/auto-sync?: false
 
-gitter/token: either exists? %options.red [
-	load %options.red
-][
-	input-gitter-token
-]
-
 input-gitter-token: func [
 	/local token f
 ][
@@ -40,6 +34,12 @@ input-gitter-token: func [
 		]
 	]
 	token
+]
+
+gitter/token: either exists? %options.red [
+	load %options.red
+][
+	input-gitter-token
 ]
 
 
