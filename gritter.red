@@ -14,10 +14,11 @@ Red [
 ;		initialization
 ; ----------------------------------------------------------------------------
 
-do %gitter-api.red
-do %rich-text.red
-do %marky-mark.red
-do %gui-tools.red
+#include %gitter-api.red
+#include %rich-text.red
+#include %marky-mark.red
+#include %gui-tools.red
+
 
 system/view/auto-sync?: false
 
@@ -49,36 +50,38 @@ gitter/token: either exists? %options.red [
 ; ----------------------------------------------------------------------------
 
 gritter: context [
-	info: none
+	user-info: none
 	user-id: none
 	data-chat: none
 	rooms: #()
-	room-id: func [
+	room-info: none
+	get-room-name: func [
 	][
-		select rooms either list-rooms/selected [
+		either list-rooms/selected [
 			pick list-rooms/data list-rooms/selected
 		][
 			first keys-of rooms
 		]
 	]
-	
+	get-room-id: func [][select rooms get-room-name]
 	init: func [
-		/local user-rooms chat room-names user-names
+		/local user-rooms chat names
 	] [
 		view/no-wait main-lay
-		info: gitter/user-info
-		user-id: info/id
+		user-info: gitter/user-info
+		user-id: user-info/id
 		user-rooms: gitter/user-rooms user-id
-		room-names: copy []
-		user-names: copy []
+		names: make map! []
+		names/rooms: copy []
+		names/users: copy []
 		foreach room user-rooms [
 			put rooms room/name room/id
-			append either room/oneToOne [user-names][room-names] room/name
+			append either room/oneToOne [names/users][names/rooms] room/name
 		]
-		list-rooms/data: compose [(sort room-names) (sort user-names)]
+		list-rooms/data: compose [(sort names/rooms) (sort names/users)]
 		list-rooms/selected: 1 ; TODO: remember last selection
 		show main-lay
-		messages: gitter/get-messages room-id
+		messages: gitter/get-messages get-room-id
 		list-chat/pane: layout/tight/only show-messages messages
 		show main-lay
 		do-events
@@ -101,12 +104,13 @@ gritter: context [
 		]
 	]
 
-	refresh: function [
+	refresh: func [
 		"Refresh list-chat"
 		face
 		/force
+		/local unread messages
 	] [
-		unread: gitter/get-unread user-id room-id
+		unread: gitter/get-unread user-id get-room-id
 		if any [
 			force
 			all [
@@ -115,17 +119,16 @@ gritter: context [
 				not equal? unread/chat not-shown face/pane unread
 			]
 		] [
-;			print "refresh required"
-			messages: gitter/get-messages room-id
+			print "refresh required"
+			messages: gitter/get-messages get-room-id
+			room-info: gitter/get-room-info get-room-name
 			face/pane: layout/tight/only show-messages messages
 			face/pane/1/offset/y: face/size/y - face/pane/1/size/y
 			show face
 		] 
 	]
 	
-	; FIXME: layout leaks face names (i.e.: list-rooms)
-
-	main-lay: layout [
+	styles: [
 		title "Gritter - A Red Gitter Client"
 		style scroller: image 12x370 draw []
 			on-create [
@@ -181,7 +184,12 @@ gritter: context [
 					show reduce [face prev-face]
 				]
 			]
+	]
 
+
+	; FIXME: layout leaks face names (i.e.: list-rooms)
+
+	main-lay: [
 		group-box 220x370 "Rooms" [
 			list-rooms: text-list 200x350 [
 				refresh/force list-chat
@@ -203,7 +211,7 @@ gritter: context [
 		below
 		button "Send" [
 			unless empty? area-input/text [
-				gitter/send-message room-id area-input/text
+				gitter/send-message get-room-id area-input/text
 				clear area-input/text
 				show area-input
 				refresh/force list-chat
@@ -218,6 +226,10 @@ gritter: context [
 			print mold reduce [list-chat/size length? list-chat/pane pane-height]
 		]
 	]
+
+	insert main-lay styles
+	main-lay: layout main-lay
+
 ]
 
 ; ---
@@ -270,7 +282,7 @@ draw-avatar: function [
 draw-body: function [
 	message
 	body
-] [
+][
 	compose/deep [
 		base 240.240.240 (body/2) 
 			draw [(body/1)] 
@@ -292,9 +304,22 @@ draw-body: function [
 		]
 ]
 
+draw-room-info: func [
+	info
+][
+	compose/deep [
+		base (colors/background) draw [
+			font (fonts/name)
+			text 0x0 (info/name)
+			font (fonts/username)
+			text 0x20 (info/topic)
+		]
+	]
+]
+
 show-messages: function [
 	messages
-] [
+][
 	out: copy []
 	foreach message messages [
 		body: rich-text/info emit-rich marky-mark message/text 530
