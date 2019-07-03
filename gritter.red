@@ -124,6 +124,9 @@ gritter: context [
 			room-info: gitter/get-room-info get-room-name
 			face/pane: layout/tight/only show-messages messages
 			face/pane/1/offset/y: face/size/y - face/pane/1/size/y
+
+			topic-info/draw: draw-room-info room-info
+
 			show face
 		] 
 	]
@@ -195,14 +198,18 @@ gritter: context [
 				refresh/force list-chat
 			]
 		]
-
-		list-chat: panel white 600x370 [] rate 1 ; now 
-			on-time [
-				refresh face
-			] 
-		scroller
+		panel [
+			across
+			topic-info: panel 200.200.200 600x60
+			return
+			list-chat: panel white 600x370 [] rate 1 ; now 
+				on-time [
+					refresh face
+				] 
+			scroller
+		]
 		return
-		text 220 "Search:" right
+;		text 220 "Search:" right
 		field 500 [
 			probe face/text
 		]
@@ -308,12 +315,13 @@ draw-room-info: func [
 	info
 ][
 	compose/deep [
-		base (colors/background) draw [
+;		base (colors/background) draw [
 			font (fonts/name)
-			text 0x0 (info/name)
+			text 4x4 (info/name)
 			font (fonts/username)
-			text 0x20 (info/topic)
-		]
+			text 4x20 (info/topic)
+			text 4x40 (mold info/tags)
+;		]
 	]
 ]
 
