@@ -85,7 +85,7 @@ send: func [
 	]
 	if any [post put] [
 		insert header [Content-Type: "application/json"]
-		post-data: json/encode map any [post-data put-data]
+		post-data: map any [post-data put-data]
 	]
 	if all [
 		remaining-requests < 2
