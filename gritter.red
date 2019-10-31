@@ -200,7 +200,10 @@ gritter: context [
 		]
 		panel [
 			across
-			topic-info: panel 200.200.200 600x60
+			topic-info: base 240.240.240 600x60
+			button-settings: base 240.240.240 30x30 "⚙" [
+				print "TODO: Open settings"
+			]
 			return
 			list-chat: panel white 600x370 [] rate 1 ; now 
 				on-time [
@@ -244,6 +247,10 @@ gritter: context [
 make-fonts [
 	name: 9 30.30.30 #bold
 	username: 8 100.100.100 #bold
+]
+
+colors: context [
+	background: 240.240.240
 ]
 
 para: make para! [wrap: on]
@@ -332,7 +339,7 @@ show-messages: function [
 	foreach message messages [
 		body: rich-text/info emit-rich marky-mark message/text 530
 		append out compose/deep [
-			base 240.240.240 600x20 draw [(draw-header message)]
+			base (colors/background) 600x20 draw [(draw-header message)]
 			return
 			(draw-avatar message body/2/y)
 			space 5x0
@@ -351,4 +358,4 @@ gritter/init
 if not exists? %options.red [
 ;-- No need to save every time, token does not change often
 	save %options.red compose [token: (gitter/token)]
-]
+i]
