@@ -29,6 +29,9 @@ select-by: function [
 	none
 ]
 
+empty-block?: func [value][all [block? value empty? value]]
+
+
 init-gitter: does [
 	do load %options.red
 	user: gitter/user-info
@@ -57,7 +60,12 @@ list-rooms: function [
 ]
 
 get-message-author: func [message][
-	any [all [message/fromUser message/fromUser/username] message/author]
+	any [
+; FIXME: There is NONE in message, but as a word!
+;		How that's possible?
+		all [message/fromUser message/fromUser <> to word! "none" message/fromUser/username]
+		message/author
+	]
 ]
 
 strip-message: function [
@@ -67,9 +75,9 @@ strip-message: function [
 	message/html: none
 	message/author: get-message-author message
 	message/fromUser: none
-	if empty? message/mentions [message/mentions: none]
-	if empty? message/urls [message/urls: none]
-	if empty? message/issues [message/issues: none]
+	if empty-block? message/mentions [message/mentions: none]
+	if empty-block? message/urls [message/urls: none]
+	if empty-block? message/issues [message/issues: none]
 	message/unread: none
 	message/readBy: none
 	message/meta: none
@@ -90,6 +98,7 @@ download-room: func [
 	ret: copy []
 	; some preparation
 	info: func [value /no-line] [if verbose [either no-line [prin value][print value]]]
+	info/no-line ["^/Download messages for room" form room/name "..."]
 	if path? room [room: gitter/get-room-info room]
 	unless exists? %messages/ [make-dir %messages/] ; TODO: This shouldn't be here
 	unless to [
