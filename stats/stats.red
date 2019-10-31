@@ -32,9 +32,6 @@ Use SELECT-ROOM <id or name> to get room.
 
 ;do %../../red-tools/csv.red
 
-do-thru https://rebolek.com/redquire
-redquire 'csv
-
 do %../gitter-tools.red
 gitter/token: load %../options.red
 
@@ -172,8 +169,8 @@ store: func [
 	data
 ][
 	try [save rejoin [data-path %red/ file %.red] data]
-	try [write rejoin [data-path %csv/ file %.csv] csv/encode data]
-	try [write rejoin [data-path %json/ file %.json] json/encode data]
+	try [write rejoin [data-path %csv/ file %.csv] to-csv data]
+	try [write rejoin [data-path %json/ file %.json] to-json data]
 ]
 
 ; todo add order, do all in refirements
@@ -525,9 +522,11 @@ count-qaa: func [
 ][
 	qaa: copy []
 	foreach room words-of room-messages [
+		print ["Room" room]
 		msgs: room-messages/:room
 		forall msgs [
 			if question? msgs/1 [
+				print [msgs/1/id "is question"]
 				answer: find-answer msgs/1 copy/part next msgs 50
 				if answer [
 					; only answered questions are added
@@ -543,13 +542,16 @@ find-answer: func [
 	question
 	messages
 ][
-	author: question/fromUser/username
+;	author: question/fromUser/username
+	author: question/author
 	foreach message messages [
-		foreach mentioned message/mentions [
-			if equal? author mentioned/screenName [
-				return message
-			]
-		]
+;	NOTE: This code expects full message format, it's replaced by code for short message format below
+;		foreach mentioned message/mentions [
+;			if equal? author mentioned/screenName [
+;				return message
+;			]
+;		]
+		if find message/text author [return message]
 	]
 	none
 ]
@@ -569,9 +571,9 @@ get-data: func [
 		rooms/(room/id): room
 		if room/public [
 			either verbose [
-				download-room/compact/verbose to path! room/name
+				download-room/compact/verbose room
 			][
-				download-room/compact to path! room/name
+				download-room/compact room
 			]
 		]
 		save rejoin [%rooms/ room/id %.red] room
