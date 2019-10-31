@@ -14,68 +14,7 @@ Red [
 	}
 ]
 
-; --- fonts
-
-fonts: #()
-fonts/base: make font! [
-	name: "Segoe UI"
-	size: 10
-	color: 30.30.30
-	style: []
-	anti-alias?: yes
-]
-
-make-fonts: function [
-	spec
-] [
-	font: none
-	styles: clear []
-	parse spec [
-		some [
-			set font set-word! (
-				clear styles
-				parent: fonts/base
-				name: parent/name
-				size: parent/size
-				color: parent/color
-				parent: 'base
-			)
-			opt [set parent word!]
-			any [
-				set name string!
-			|	set size integer!
-			|	set color tuple!
-			|	set style issue! (append styles load form style)	
-			]
-			(
-				fonts/:font: make fonts/:parent compose/deep [
-					name: (name)
-					size: (size)
-					color: (color)
-					style: [(styles)]
-				]
-			)
-		]
-	]
-]
-
-make-fonts [
-	text: base 10
-	bold: #bold
-	italic: #italic
-	underline: #underline
-	link: #bold 120.60.60
-	active-link: #bold 220.160.160
-	fixed: "Lucida Console"
-]
-
-; -----------
-
-whitespace?: function [
-	char
-] [
-	find " ^/" char
-]
+whitespace?: function [char][find " ^/" char]
 
 ; ----------------
 
