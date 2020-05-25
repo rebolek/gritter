@@ -30,3 +30,9 @@ Of course it would be possible to generate the Draw dialect directly from Markdo
 ## Gitter Tools
 
 Gritter also provides various tools for working with Gitter, downloading whole rooms and searching.
+
+# Usage
+
+To use Gritter and/or Gitter tools, you need Gitter API key. You can get one from [Gitter developer page](https://api.gitter.im). If you run Gritter for the first time you will be prompet to paste your key in GUI. If you don't want to use GUI paste your key into file `%options.red` as `issue!`. E.g. your key is `12345`, so your `%options.red` would be `#12345` (format of this file may change in the future).
+
+If you want to use offline search feature, you need to download rooms first. To download them, run `%stats.stats.red` and use function `get-data` or `get-data/verbose` if you are insterested in what's going on. This will take a *lot* of time on first run, on ssubsequntial runs, only new messages are donwloaded and `get-data` function runs much faster.
