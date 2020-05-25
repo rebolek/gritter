@@ -3,8 +3,7 @@ Red[
 	Author: "Boleslav Březovský"
 ]
 
-do-thru https://rebolek.com/redquire
-redquire 'ansi-seq
+#include %ansi-seq.red
 
 base-url: https://rebolek.com/stats/data/red
 

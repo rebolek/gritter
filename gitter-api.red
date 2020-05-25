@@ -10,8 +10,7 @@ This link returns non-UTF8 data: https://api.gitter.im/v1/rooms/572d874bc43b8c60
 	}
 ]
 
-do https://rebolek.com/redquire
-redquire 'http-tools
+#include %http-tools.red
 
 gitter: context [
 
